@@ -213,7 +213,6 @@
             if (Object.keys(loadedFiles).length === 0) document.getElementById('tableContainer').innerHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">GPXファイルをインポート、またはプロジェクトファイルを読み込んでください</div>`;
         }
         
-        // ▼▼▼【変更】displayTable関数を修正 ▼▼▼
         function displayTable(points, highlightPointId) {
             let tableHTML = `<table><thead><tr><th><span title="ドラッグで並べ替え">&#x2195;</span></th><th class="mobile-hidden-col">ファイル名</th><th title="ダブルクリックで編集">測点名</th><th class="mobile-hidden-col">測定日時</th><th>緯度</th><th>経度</th><th>X (m)</th><th>Y (m)</th><th title="ダブルクリックで編集">アンテナ高</th><th>補正後標高</th></tr></thead><tbody>`;
             if (points.length === 0) { tableHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">表示する測点がありません</div>`;
@@ -453,18 +452,95 @@
                 y: chartInstance.scales.y.getValueForPixel(e.y) 
             };
         }
-        function getChartCoordsFromMouseEvent(e) {
+        
+        // ▼▼▼【変更】ここからタッチ操作対応のための修正 ▼▼▼
+
+        /**
+         * マウスイベントまたはタッチイベントから、Chart.jsキャンバス上の座標を取得する
+         * @param {Event} e - マウスイベントまたはタッチイベント
+         * @returns {{x: number, y: number}|null} Chart.jsのデータ座標、またはnull
+         */
+        function getChartCoordsFromCanvasEvent(e) {
             if (!chartInstance) return null;
-            return { 
-                x: chartInstance.scales.x.getValueForPixel(e.offsetX), 
-                y: chartInstance.scales.y.getValueForPixel(e.offsetY) 
+
+            let clientX, clientY;
+            const eventType = e.type;
+
+            // イベントタイプに応じて座標の基点を取得
+            if (eventType.startsWith('touch')) {
+                // タッチイベントの場合、スクロール等のデフォルト動作を抑制
+                e.preventDefault();
+                // touchendの場合はchangedTouchesを、それ以外はtouchesを使用
+                const touch = (eventType === 'touchend' || eventType === 'touchcancel')
+                    ? e.changedTouches[0]
+                    : e.touches[0];
+                if (!touch) return null; // 指が離れた後などでtouchオブジェクトがない場合は終了
+                clientX = touch.clientX;
+                clientY = touch.clientY;
+            } else {
+                // マウスイベントの場合
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            // キャンバスの画面上の位置を取得し、相対座標を計算
+            const rect = e.target.getBoundingClientRect();
+            const offsetX = clientX - rect.left;
+            const offsetY = clientY - rect.top;
+            
+            // 相対座標をChart.jsのスケール上の値に変換
+            return {
+                x: chartInstance.scales.x.getValueForPixel(offsetX),
+                y: chartInstance.scales.y.getValueForPixel(offsetY)
             };
         }
-        
-        function handlePlotMouseDown(e) { if (!isSectionMode || isSectionLineDefined || document.getElementById('section-mode-select').value !== '2-point') return; isDrawingSectionLine = true; sectionLineStart = getChartCoordsFromMouseEvent(e); }
-        function handlePlotMouseMove(e) { if (!sectionLineStart || !isDrawingSectionLine) return; const current = getChartCoordsFromMouseEvent(e); if (current) { const annotations = chartInstance.options.plugins.annotation.annotations; if(!annotations.tempLine) { annotations.tempLine = { type: 'line', xMin: sectionLineStart.x, yMin: sectionLineStart.y, xMax: current.x, yMax: current.y, borderColor: 'rgba(255,0,0,0.5)', borderWidth: 2, drawTime: 'afterDraw' }; } else { annotations.tempLine.xMax = current.x; annotations.tempLine.yMax = current.y; } chartInstance.update('none'); } }
-        function handlePlotMouseUp(e) { if (!sectionLineStart || !isDrawingSectionLine) return; isDrawingSectionLine = false; const end = getChartCoordsFromMouseEvent(e); delete chartInstance.options.plugins.annotation.annotations.tempLine; if (end) defineSectionLineOnMapAndChart([sectionLineStart, end]); sectionLineStart = null; }
-        
+
+        /**
+         * 断面線描画の開始処理 (mousedown, touchstart)
+         */
+        function handlePlotDrawStart(e) {
+            if (!isSectionMode || isSectionLineDefined || document.getElementById('section-mode-select').value !== '2-point') return;
+            isDrawingSectionLine = true;
+            sectionLineStart = getChartCoordsFromCanvasEvent(e);
+        }
+
+        /**
+         * 断面線描画中の処理 (mousemove, touchmove)
+         */
+        function handlePlotDrawMove(e) {
+            if (!sectionLineStart || !isDrawingSectionLine) return;
+            const current = getChartCoordsFromCanvasEvent(e);
+            if (current) {
+                const annotations = chartInstance.options.plugins.annotation.annotations;
+                if (!annotations.tempLine) {
+                    annotations.tempLine = { type: 'line', xMin: sectionLineStart.x, yMin: sectionLineStart.y, xMax: current.x, yMax: current.y, borderColor: 'rgba(255,0,0,0.5)', borderWidth: 2, drawTime: 'afterDraw' };
+                } else {
+                    annotations.tempLine.xMax = current.x;
+                    annotations.tempLine.yMax = current.y;
+                }
+                chartInstance.update('none');
+            }
+        }
+
+        /**
+         * 断面線描画の終了処理 (mouseup, touchend)
+         */
+        function handlePlotDrawEnd(e) {
+            if (!sectionLineStart || !isDrawingSectionLine) return;
+            isDrawingSectionLine = false;
+            const end = getChartCoordsFromCanvasEvent(e);
+            delete chartInstance.options.plugins.annotation.annotations.tempLine;
+            if (end) {
+                // 開始点と終了点が同じ場合はクリックとみなし、何もしない
+                if (Math.abs(sectionLineStart.x - end.x) > 1e-6 || Math.abs(sectionLineStart.y - end.y) > 1e-6) {
+                    defineSectionLineOnMapAndChart([sectionLineStart, end]);
+                }
+            }
+            sectionLineStart = null;
+        }
+
+        // ▲▲▲【変更】ここまでタッチ操作対応のための修正 ▲▲▲
+
         function handlePlotClick(evt) {
             const elems = chartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
             
@@ -790,10 +866,24 @@
             document.getElementById('create-section-profile-btn').addEventListener('click', generateAndShowSectionProfile);
             document.getElementById('sectionAspectRatioToggle').addEventListener('change', () => { if (sectionChartInstance) sectionChartInstance.update(); });
 
+            // ▼▼▼【変更】ここからイベントリスナーの修正 ▼▼▼
             const plotCanvas = document.getElementById('xyPlot');
-            plotCanvas.addEventListener('mousedown', handlePlotMouseDown);
-            plotCanvas.addEventListener('mousemove', handlePlotMouseMove);
-            plotCanvas.addEventListener('mouseup', handlePlotMouseUp);
+            // 古いイベントリスナーを削除またはコメントアウト
+            // plotCanvas.addEventListener('mousedown', handlePlotMouseDown);
+            // plotCanvas.addEventListener('mousemove', handlePlotMouseMove);
+            // plotCanvas.addEventListener('mouseup', handlePlotMouseUp);
+
+            // マウスイベント用の新しいリスナー
+            plotCanvas.addEventListener('mousedown', handlePlotDrawStart);
+            plotCanvas.addEventListener('mousemove', handlePlotDrawMove);
+            plotCanvas.addEventListener('mouseup', handlePlotDrawEnd);
+
+            // タッチイベント用の新しいリスナーを追加
+            // { passive: false } は、イベント内で preventDefault() を呼び出すために必要
+            plotCanvas.addEventListener('touchstart', handlePlotDrawStart, { passive: false });
+            plotCanvas.addEventListener('touchmove', handlePlotDrawMove, { passive: false });
+            plotCanvas.addEventListener('touchend', handlePlotDrawEnd);
+            // ▲▲▲【変更】ここまでイベントリスナーの修正 ▲▲▲
 
             const modal = document.getElementById('section-modal');
             modal.addEventListener('click', (e) => { if (e.target === modal || e.target.classList.contains('modal-close')) modal.style.display = 'none'; });
