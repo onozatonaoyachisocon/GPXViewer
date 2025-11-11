@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GNSSデータビューア</title>
+    <title>GNSS Viewer</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <style>
@@ -12,8 +12,14 @@
         html, body { height: 100%; overflow: hidden; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; background: #f0f2f5; }
         .header { background: #2c3e50; color: white; padding: 0 20px; height: var(--header-height); display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 20; }
-        
-        .main-container { display: flex; flex: 1; overflow: hidden; flex-direction: row; }
+        .header h1 { flex-grow: 1; font-size: 1.5em; }
+        .header .header-buttons { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .header .header-buttons button { background: #3498db; color: white; border: none; border-radius: 5px; padding: 8px 12px; font-size: 0.9em; cursor: pointer; white-space: nowrap; }
+        .header .header-buttons button:hover { background: #2980b9; }
+        .header #helpBtn { background: #95a5a6; border-radius: 50%; width: 32px; height: 32px; font-size: 1.4em; font-weight: bold; padding: 0; }
+        .header #helpBtn:hover { background: #7f8c8d; }
+
+        .main-container { display: flex; flex: 1; overflow: hidden; flex-direction: row; height: calc(100% - var(--header-height) - 40px); }
         .left-panel { width: 60%; display: flex; flex-direction: column; background: #ecf0f1; border-right: 2px solid #bdc3c7; }
         .right-panel { width: 40%; display: flex; flex-direction: column; }
         
@@ -37,11 +43,15 @@
         #xyPlot.editable-section { cursor: pointer; }
 
         .info-panel { padding: 10px 15px; background: #fff; margin: 10px 10px 0 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .compact-controls { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 10px; }
+        
+        .compact-controls { display: grid; grid-template-columns: repeat(3, auto) 1fr 1fr repeat(2, auto); gap: 8px; margin-bottom: 10px; align-items: end;}
+        
         .control-group { display: flex; flex-direction: column; }
         .control-group label { font-size: 0.8em; margin-bottom: 2px; color: #555; font-weight: bold; }
         .control-group input, .control-group select, .control-group button { padding: 8px; background: #fff; border-radius: 4px; border: 1px solid #ccc; font-size: 0.9em; width: 100%; }
         .control-group button { background-color: #3498db; color: white; border: none; cursor: pointer; text-align: center;}
+        
+        .compact-controls .control-group button { width: auto; white-space: nowrap; padding-left: 12px; padding-right: 12px; }
         .control-group button:hover { background-color: #2980b9; }
         
         #tableContainer { flex-grow: 1; overflow-y: auto; margin: 10px; border: 1px solid #ccc; }
@@ -61,37 +71,64 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 80%; max-width: 900px; height: 80%; max-height: 600px; display: flex; flex-direction: column; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-header .button-group { display: flex; gap: 10px; align-items: center; }
+        .modal-header .button-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; }
         .modal-header button { padding: 4px 8px; border-radius: 4px; border: 1px solid #bdc3c7; background: #fff; cursor: pointer; }
         .modal-close { font-size: 1.5rem; border: none; background: none; cursor: pointer; }
+        .modal-body { flex-grow: 1; position: relative; display: flex; flex-direction: column; overflow-y: auto;}
+        #text-import-textarea { width: 100%; flex-grow: 1; font-family: monospace; font-size: 0.9em; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: none; }
+        .modal-footer { text-align: right; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
+        .modal-footer button { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
+        .modal-footer .cancel-btn { background-color: #7f8c8d; color: white; }
+        .modal-footer .ok-btn { background-color: #3498db; color: white; }
         .drop-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.7); color: white; display: none; justify-content: center; align-items: center; font-size: 2em; text-align: center; z-index: 10000; pointer-events: none; }
         body.drag-over .drop-overlay { display: flex; }
         
         .mobile-only-tabs { display: none; flex-shrink: 0; }
         
+        #help-modal .modal-body { padding: 0 15px; font-size: 0.9em; line-height: 1.6; }
+        #help-modal h4 { margin-top: 20px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0; font-size: 1.1em; color: #2c3e50; }
+        #help-modal h4:first-of-type { margin-top: 0; }
+        #help-modal p, #help-modal ol { margin-bottom: 15px; }
+        #help-modal ol, #help-modal ul { padding-left: 25px; }
+        #help-modal li { margin-bottom: 8px; }
+        #help-modal ul li { margin-bottom: 5px; }
+        #help-modal small { color: #555; }
+
+        .legal-notice { font-size: 11px; text-align: center; padding: 10px 0; color: #555; background: #f0f2f5; border-top: 1px solid #ccc; flex-shrink: 0; }
+        #lastUpdated { font-size: 12px; margin-bottom: 10px; }
+        #legal-toggle { cursor: pointer; font-weight: bold; }
+        #legal-details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
+        #legal-details p { margin-bottom: 5px; }
+
         @media (max-width: 768px) {
             .mobile-only-tabs { display: flex; height: var(--tab-height); }
             .mobile-only-tabs .tab-button { flex-grow: 1; text-align: center; }
-            
             .main-container { flex-direction: column; }
             .left-panel, .right-panel { width: 100%; border-right: none; flex: 1; min-height: 0; }
-            
             .left-panel.hidden-on-mobile, .right-panel.hidden-on-mobile { display: none; }
-            
             .right-panel .tab-bar { display: none; } 
             
-            .compact-controls { grid-template-columns: repeat(3, 1fr); }
+            .compact-controls { grid-template-columns: 1fr 1fr; }
+            .control-group.pole-height-group { grid-column: 1 / -1; }
             .control-group.mobile-hidden { display: none; }
+            .mobile-hidden-col { display: none; }
+            
+            .header h1 { font-size: 1.2em; }
+            .header .header-buttons button { padding: 6px 8px; font-size: 0.8em; }
 
-            /* ▼▼▼【追加】モバイル時に特定のテーブル列を非表示にする ▼▼▼ */
-            .mobile-hidden-col {
-                display: none;
-            }
+            .modal-mobile-hidden { display: none !important; }
         }
     </style>
 </head>
 <body>
-    <div class="header"><h1>🌐GNSSデータビューア</h1></div>
+    <div class="header">
+        <h1>🌐GNSS Viewer</h1>
+        <div class="header-buttons">
+            <button id="projectLoadBtnHeader" title="プロジェクト読込">読込</button>
+            <button id="projectSaveBtnHeader" title="プロジェクト保存">保存</button>
+            <button id="helpBtn" title="使い方ガイド">?</button>
+        </div>
+    </div>
     
     <div class="tab-bar mobile-only-tabs">
         <button id="tab-data-mobile" class="tab-button active">📊 データ</button>
@@ -110,22 +147,29 @@
                         <input type="file" id="fileInput" accept=".gpx" multiple style="display: none;">
                     </div>
                     <div class="control-group mobile-hidden">
-                        <label>プロジェクト読込</label>
-                        <button onclick="document.getElementById('projectInput').click()">インポート</button>
-                        <input type="file" id="projectInput" accept=".gsv" style="display: none;">
+                        <label>CSV/TXTファイル</label>
+                        <button onclick="document.getElementById('csvInput').click()">インポート</button>
+                        <input type="file" id="csvInput" accept=".csv,.txt" multiple style="display: none;">
                     </div>
                     <div class="control-group mobile-hidden">
-                        <label>プロジェクト保存</label>
-                        <button id="saveProjectBtn">保存</button>
+                        <label>テキスト入力</label>
+                        <button id="textImportBtn">インポート</button>
                     </div>
-                    <div class="control-group"><label>座標系</label><select id="coordSystem"></select></div>
-                    <div class="control-group"><label>ポール高補正</label><select id="poleHeight"><option value="0">補正なし</option><option value="2.246">シンワ伸縮ポール(2.246m)</option><option value="2.186">GNSSカーボンポール(2.186m)</option><option value="1.961">一脚(1.961m)</option></select></div>
+                    <div class="control-group">
+                        <label>座標系</label>
+                        <select id="coordSystem"></select>
+                    </div>
+                    <div class="control-group pole-height-group">
+                        <label>ポール高補正</label>
+                        <select id="poleHeight"><option value="0">補正なし</option><option value="2.246">シンワ伸縮ポール(2.246m)</option><option value="2.186">GNSSカーボンポール(2.186m)</option><option value="1.961">一脚(1.961m)</option></select>
+                    </div>
                     <div class="control-group mobile-hidden"><label>CSV</label><button id="downloadCsvBtn" style="visibility: hidden;">エクスポート</button></div>
                     <div class="control-group mobile-hidden"><label>DXF</label><button id="downloadDxfBtn" style="visibility: hidden;">エクスポート</button></div>
                 </div>
+                <input type="file" id="projectInput" accept=".gsv" style="display: none;">
                 <div id="file-list-panel-container" style="display: none; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;"><h4 style="font-size: 0.9em; color: #555;">読み込み済みファイル</h4><div id="file-list-panel"></div></div>
             </div>
-            <div id="tableContainer"><div class="loading" style="text-align:center; padding-top: 50px;">GPXファイルをインポート、またはプロジェクトファイルを読み込んでください</div></div>
+            <div id="tableContainer"><div class="loading" style="text-align:center; padding-top: 50px;">GPX/CSVファイルをインポート、またはプロジェクトファイルを読み込んでください</div></div>
         </div>
         <div class="right-panel hidden-on-mobile">
             <div class="tab-bar">
@@ -163,21 +207,139 @@
             <div class="modal-header">
                 <h3>断面図</h3>
                 <div class="button-group">
+                    <div id="section-type-switch-container" style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; padding: 2px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <label style="cursor: pointer;"><input type="radio" name="sectionType" value="projected" checked> 投影断面</label>
+                        <label style="cursor: pointer; margin-left: 5px;"><input type="radio" name="sectionType" value="connected"> 測点連結断面</label>
+                    </div>
                     <label style="display: flex; align-items: center; font-weight: normal; font-size: 0.9em;">
                         <input type="checkbox" id="sectionAspectRatioToggle" style="margin-right: 5px;">スケール 1:1
                     </label>
-                    <button id="downloadSectionCsvBtn">CSV</button>
-                    <button id="downloadSectionDxfBtn">DXF</button>
+                    <button id="downloadSectionCsvBtn" class="modal-mobile-hidden">CSV</button>
+                    <div id="dxf-export-options" class="modal-mobile-hidden" style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; padding: 2px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <label style="cursor: pointer;" title="断面図のみをDXFファイルに出力します。"><input type="radio" name="dxfExportType" value="section_only" checked> 断面図のみ</label>
+                        <label style="cursor: pointer; margin-left: 5px;" title="現在の平面図と断面図を1つのDXFファイルに出力します。"><input type="radio" name="dxfExportType" value="both"> 平面図も</label>
+                    </div>
+                    <button id="downloadSectionDxfBtn" class="modal-mobile-hidden">DXF</button>
                     <button class="modal-close">&times;</button>
                 </div>
             </div>
-            <div class="modal-body" style="flex-grow: 1; position: relative;"><canvas id="sectionPlot"></canvas></div>
+            <div class="modal-body"><canvas id="sectionPlot"></canvas></div>
         </div>
     </div>
-    <div class="drop-overlay"><p>ここにGPXをドロップ</p></div>
+    <div class="drop-overlay"><p>ここにGPX/CSV/テキストをドロップ</p></div>
+
+    <div id="coord-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px; height: auto;">
+            <div class="modal-header"><h3>座標系の確認</h3></div>
+            <div class="modal-body" style="padding: 20px;">
+                <p>XY座標を持つデータが検出されました。<br>変換に使用する座標系を選択してください。</p>
+                <div class="control-group" style="margin-top: 15px;">
+                    <label for="modal-coord-system">座標系:</label>
+                    <select id="modal-coord-system" style="padding: 8px;"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="coord-modal-cancel" class="cancel-btn">キャンセル</button>
+                <button id="coord-modal-ok" class="ok-btn">決定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="text-import-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 700px; height: 500px;">
+            <div class="modal-header">
+                <h3>テキストを貼り付けてインポート</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.9em; margin-bottom: 10px; flex-shrink: 0;">
+                    Excelなどから測点データをコピーして貼り付けてください。(カンマ区切り/タブ区切りに対応)<br>
+                    想定される列: <b>測点名, (緯度, 経度 | X座標, Y座標), 標高(アンテナ高)</b>
+                </p>
+                <textarea id="text-import-textarea" placeholder="例:&#10;P1, 35.123, 139.456, 50.1&#10;P2, 1234.5, 5678.9, 33.3 (X, Y)&#10;..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button id="text-import-cancel" class="cancel-btn">キャンセル</button>
+                <button id="text-import-ok" class="ok-btn">インポート</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>使い方ガイド</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>はじめに</h4>
+                <p>このツールは、GNSS測量などで取得した測量データをブラウザ上で可視化し、簡単な解析や断面図作成を行うためのWebアプリケーションです。</p>
+                
+                <h4>基本的な使い方 (3ステップ)</h4>
+                <ol>
+                    <li>
+                        <strong>データのインポート</strong><br>
+                        操作パネルのボタン、または画面へのドラッグ＆ドロップでデータを読み込みます。
+                        <ul>
+                            <li><b>GPXファイル</b>: 標準的なGPXファイルのウェイポイント(wpt)を読み込みます。</li>
+                            <li><b>CSV/TXTファイル</b>: カンマまたはタブ区切りのテキストファイルを読み込みます。(※モバイル非対応)</li>
+                            <li><b>テキスト入力</b>: Excelなどからコピーしたデータを直接貼り付けてインポートします。(※モバイル非対応)</li>
+                            <li><b>CSV/TXTの書式</b>: `測点名, X座標(または緯度), Y座標(または経度), アンテナ高` の順でデータを用意してください。XY座標のデータが検出されると、座標系を選択するダイアログが表示されます。</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>データの確認と操作</strong><br>
+                        データは左の「データパネル」と右の「地図」「XYプロット」に表示されます。
+                        <ul>
+                            <li><b>データパネル</b>: ファイルごとの表示/非表示の切り替えや削除ができます。</li>
+                            <li><b>テーブル</b>: 測点の一覧です。行のドラッグで並べ替え、測点名やアンテナ高のセルをダブルクリックすると値を直接編集できます。</li>
+                            <li><b>地図</b>: 地理院地図上に測点の位置がプロットされます。マーカーをクリックすると詳細情報を確認できます。</li>
+                            <li><b>XYプロット</b>: 平面直角座標系での位置関係を確認できます。マウスホイールでズーム、ドラッグでパン（移動）ができます。</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>データのエクスポート</strong><br>
+                        操作パネルの「CSV」「DXF」ボタンから、表示されている全測点のデータをファイルとして保存できます。(※モバイル非対応)
+                    </li>
+                </ol>
+
+                <h4>応用機能: 断面図の作成</h4>
+                <ol>
+                    <li>XYプロットタブの<b>「断面線作成」</b>ボタンを押し、モードを有効にします。</li>
+                    <li>
+                        <b>断面線の定義</b>:
+                        <ul>
+                            <li><b>任意の2点</b>: プロット上をドラッグして始点と終点を結ぶ線を作成します。</li>
+                            <li><b>鉛直/水平</b>: プロット上をクリックして、その位置を通る垂直線または水平線を作成します。</li>
+                        </ul>
+                    </li>
+                    <li><b>測点の選択</b>: 断面線が定義されると、設定した「断面幅」に含まれる測点が自動的に選択されます（テーブル上で紫色にハイライト）。プロット上の点をクリックすることで、手動で測点を追加・削除できます。</li>
+                    <li><b>断面図の作成</b>: 測点が2つ以上選択された状態で<b>「断面図作成」</b>ボタンを押すと、断面図がモーダルウィンドウで表示されます。</li>
+                     <li><b>断面図の種類</b>: 「投影断面」と「測点連結断面」を切り替えて表示できます。</li>
+                    <li><b>エクスポート</b>: 断面図のウィンドウから、断面データをCSVまたはDXF形式で保存できます。<br>DXFエクスポートでは、「断面図のみ」または「現在の平面図と断面図の両方」を選択して出力できます。(※モバイル非対応)</li>
+                </ol>
+                
+                <h4>プロジェクト機能</h4>
+                <!-- 【修正】 CSV/TXTが保存できない旨の注釈を削除 -->
+                <p>ヘッダーにある<b>「保存」</b>ボタンで現在の作業状態を `.gsv` ファイルとして保存できます。これには読み込んだGPX、CSV、TXT、テキスト入力のデータ、編集内容、表示設定などがすべて含まれます。後で<b>「読込」</b>ボタンから作業を再開できます。</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="legal-notice">
+      <div id="lastUpdated"></div>
+      <div id="legal-toggle">免責事項 (クリックで表示)</div>
+      <div id="legal-details">
+        <p class="copyright" style="font-weight: bold;">Copyright &copy; 2025 (株)地圏総合コンサルタント All Rights Reserved.</p>
+        <p class="developer" style="font-size: 11px;">Developed by: Naoya.Onozato</p>
+        <p>本サービスの利用によって生じたいかなる損害についても、作成者は一切の責任を負いません。</p>
+        <p>本サービスは以下のオープンソースライブラリおよび公的機関のデータを使用しています:<br>- 地図データ: © 国土地理院<br>- ライブラリ: Leaflet, Chart.js, SortableJS, proj4js</p>
+      </div>
+    </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
@@ -185,53 +347,190 @@
     <script>
         // --- (JavaScript) ---
         let map, polylineLayer, sortableInstance, chartInstance, sectionChartInstance, mapSectionLine;
-        let loadedFiles = {}, activePoints = [], currentSectionData = [], lastSectionCoords = null, lastDefinedSectionLinePoints = null;
+        let loadedFiles = {}, activePoints = [], currentSectionData = {}, lastSectionCoords = null, lastDefinedSectionLinePoints = null;
         let isSectionMode = false, isSectionLineDefined = false, sectionLineStart = null;
-        let pointsInLastSectionIds = new Set();
+        let pointsInLastSectionIds = [];
         let isDrawingSectionLine = false;
+        let tempCsvContent = null;
+        let tempCsvFileName = null;
+        let textImportCounter = 1;
         
-        const GRS80 = { a: 6378137.0, f: 1 / 298.257222101 };
-        const jprcsParams = { 1: { phi0_deg: 33.0, lambda0_deg: 129.5 }, 2: { phi0_deg: 33.0, lambda0_deg: 131.0 }, 3: { phi0_deg: 36.0, lambda0_deg: 132.166666666667 }, 4: { phi0_deg: 33.0, lambda0_deg: 133.5 }, 5: { phi0_deg: 36.0, lambda0_deg: 134.333333333333 }, 6: { phi0_deg: 36.0, lambda0_deg: 136.0 }, 7: { phi0_deg: 36.0, lambda0_deg: 137.166666666667 }, 8: { phi0_deg: 36.0, lambda0_deg: 138.5 }, 9: { phi0_deg: 36.0, lambda0_deg: 139.833333333333 }, 10: { phi0_deg: 40.0, lambda0_deg: 140.833333333333 }, 11: { phi0_deg: 44.0, lambda0_deg: 140.25 }, 12: { phi0_deg: 44.0, lambda0_deg: 142.25 }, 13: { phi0_deg: 44.0, lambda0_deg: 144.25 }, 14: { phi0_deg: 26.0, lambda0_deg: 142.0 }, 15: { phi0_deg: 26.0, lambda0_deg: 127.5 }, 16: { phi0_deg: 26.0, lambda0_deg: 124.0 }, 17: { phi0_deg: 26.0, lambda0_deg: 131.0 }, 18: { phi0_deg: 20.0, lambda0_deg: 136.0 }, 19: { phi0_deg: 26.0, lambda0_deg: 154.0 } };
+        const coordinateSystems = [
+          {num:1, lat0:33, lon0:129.5, epsg:6669}, {num:2, lat0:33, lon0:131, epsg:6670},
+          {num:3, lat0:36, lon0:132.1666667, epsg:6671}, {num:4, lat0:33, lon0:133.5, epsg:6672},
+          {num:5, lat0:36, lon0:134.3333333, epsg:6673}, {num:6, lat0:36, lon0:136, epsg:6674},
+          {num:7, lat0:36, lon0:137.1666667, epsg:6675}, {num:8, lat0:36, lon0:138.5, epsg:6676},
+          {num:9, lat0:36, lon0:139.8333333, epsg:6677}, {num:10, lat0:40, lon0:140.8333333, epsg:6678},
+          {num:11, lat0:44, lon0:140.25, epsg:6679}, {num:12, lat0:44, lon0:142.25, epsg:6680},
+          {num:13, lat0:44, lon0:144.25, epsg:6681}, {num:14, lat0:26, lon0:142, epsg:6682},
+          {num:15, lat0:26, lon0:127.5, epsg:6683}, {num:16, lat0:26, lon0:124, epsg:6684},
+          {num:17, lat0:26, lon0:131, epsg:6685}, {num:18, lat0:20, lon0:136, epsg:6686},
+          {num:19, lat0:26, lon0:154, epsg:6687}
+        ];
         
-        function latLonToXY(lat, lon, params) { const phi = lat * Math.PI / 180, lambda = lon * Math.PI / 180, phi0 = params.phi0_deg * Math.PI / 180, lambda0 = params.lambda0_deg * Math.PI / 180; const a = GRS80.a, f = GRS80.f, m0 = 0.9999, FN = 0.0, FE = 0.0; const n = f / (2 - f), n2 = n * n, n3 = n2 * n, n4 = n3 * n; const A = [ (1 + n2/4 + n4/64), -(3/2) * (n - n3/8), (15/16) * (n2 - n4/4), -(35/48) * n3 ]; const S = (p) => a / (1 + n) * (A[0] * p + A[1] * Math.sin(2 * p) + A[2] * Math.sin(4 * p) + A[3] * Math.sin(6 * p)); const S0 = S(phi0); const e2 = f * (2 - f); const nu = a / Math.sqrt(1 - e2 * Math.pow(Math.sin(phi), 2)); const t = Math.tan(phi), l = lambda - lambda0; const eta2 = e2 / (1 - e2) * Math.pow(Math.cos(phi), 2); const term1 = (S(phi) - S0) * m0, term2 = (m0 * nu * Math.sin(phi) * Math.cos(phi) / 2) * l*l, term3 = (m0 * nu * Math.sin(phi) * Math.pow(Math.cos(phi), 3) / 24) * (5 - t*t + 9 * eta2 + 4 * eta2*eta2) * Math.pow(l, 4), term4 = (m0 * nu * Math.sin(phi) * Math.pow(Math.cos(phi), 5) / 720) * (61 - 58 * t*t + t*t*t*t) * Math.pow(l, 6); const X = FN + term1 + term2 + term3 + term4; const term5 = m0 * nu * Math.cos(phi) * l, term6 = (m0 * nu * Math.pow(Math.cos(phi), 3) / 6) * (1 - t*t + eta2) * Math.pow(l, 3), term7 = (m0 * nu * Math.pow(Math.cos(phi), 5) / 120) * (5 - 18 * t*t + t*t*t*t + 14 * eta2 - 58 * eta2 * t*t) * Math.pow(l, 5); return { x: X, y: FE + term5 + term6 + term7 }; }
-        function xyToLatLon(x, y, params) { const phi0 = params.phi0_deg * Math.PI / 180, lambda0 = params.lambda0_deg * Math.PI / 180; const a = GRS80.a, f = GRS80.f, m0 = 0.9999, FN = 0.0, FE = 0.0; const n = f / (2 - f), n2 = n * n, n3 = n2 * n; const A_ = a / (1 + n) * (1 + n2/4 + n2*n2/64); const alpha = [null, (1/2)*n-(2/3)*n2+(5/16)*n3, (13/48)*n2-(3/5)*n3, (61/240)*n3]; const phi_ = (x - FN) / m0 / A_; const beta = (p) => alpha[1]*Math.sin(2*p) + alpha[2]*Math.sin(4*p) + alpha[3]*Math.sin(6*p); let phi = phi_ + beta(phi_); for(let i=0; i<5; i++) phi = phi_ + beta(phi); const e2 = f * (2 - f); const nu = a / Math.sqrt(1 - e2 * Math.pow(Math.sin(phi), 2)); const rho = a * (1 - e2) / Math.pow(1 - e2 * Math.pow(Math.sin(phi), 2), 1.5); const t = Math.tan(phi); const y_ = y - FE; const term1 = t * y_*y_ / (2 * m0*m0 * rho * nu); const term2 = t * (5 + 3*t*t) * Math.pow(y_, 4) / (24 * m0*m0*m0*m0 * rho * nu*nu*nu); const lat = (phi - term1 + term2) * 180 / Math.PI; const term3 = y_ / (m0 * nu); const term4 = (1 + 2*t*t) * Math.pow(y_, 3) / (6 * m0*m0*m0 * nu*nu*nu); const lon = (lambda0 + term3 - term4) * 180 / Math.PI; return { lat: lat, lon: lon }; }
+function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"' && (i === 0 || line[i-1] !== '\\')) { // エスケープされた引用符は無視
+                    if (inQuotes && line[i+1] === '"') { // "" は一つの " として扱う
+                        current += '"';
+                        i++; // 次の " をスキップ
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if ((char === ',' || char === '\t') && !inQuotes) {
+                    result.push(current.trim().replace(/^"|"$/g, '')); // 前後の引用符を削除
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim().replace(/^"|"$/g, ''));
+            return result;
+        }
 
+
+        function latLonToXY(lat, lon, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [y, x] = proj4('EPSG:4326', `EPSG:${system.epsg}`, [lon, lat]); return { x, y }; }
+        function xyToLatLon(x, y, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [lon, lat] = proj4(`EPSG:${system.epsg}`, 'EPSG:4326', [y, x]); return { lat, lon }; }
         function initMap() { const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '© GSI' }); map = L.map('map', { layers: [gsiStd] }).setView([36.2, 139.0], 5); L.control.layers({ "地理院地図": gsiStd, "写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg', { attribution: '© GSI' }) }).addTo(map); L.control.scale({ imperial: false }).addTo(map); polylineLayer = L.layerGroup().addTo(map); }
         function parseGPX(xmlText, fileName) { const parser = new DOMParser(); const xmlDoc = parser.parseFromString(xmlText, 'text/xml'); const wpts = xmlDoc.getElementsByTagName('wpt'); const points = []; for (let i = 0; i < wpts.length; i++) { const wpt = wpts[i]; const getTagText = (p, t) => p.getElementsByTagName(t)[0]?.textContent || null; const d = { id: `${fileName}-${i}`, name: getTagText(wpt, 'name') || `P${points.length + 1}`, lat: parseFloat(wpt.getAttribute('lat')), lon: parseFloat(wpt.getAttribute('lon')), antennaHeight: parseFloat(getTagText(wpt, 'ele') || 0), time: getTagText(wpt, 'time') || '', cmtText: getTagText(wpt, 'cmt') || '', pointGeoidHeight: parseFloat(getTagText(wpt, 'geoidheight') || 0), ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {} }; if (d.cmtText) { const m = d.cmtText.match(/ellipsoidHeight=([\d\.-]+)/); if (m) d.ellipsoidHeight = parseFloat(m[1]); } if (d.ellipsoidHeight !== null && d.pointGeoidHeight !== null) { d.eleDiff = d.antennaHeight - (d.ellipsoidHeight - d.pointGeoidHeight); } points.push(d); } return points; }
         
+        function processCsvPoints(csvText, fileName, coordSystemId) {
+            const lines = csvText.trim().split(/\r?\n/);
+            const headerLineTest = lines[0].toLowerCase();
+            const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point');
+            const dataLines = hasHeader ? lines.slice(1) : lines;
+            const points = [];
+
+            for (let i = 0; i < dataLines.length; i++) {
+                const values = parseCSVLine(dataLines[i]);
+                if (values.length < 3 || values.some(v => v === '')) continue;
+
+                const name = values[0];
+                const val1 = parseFloat(values[1]);
+                const val2 = parseFloat(values[2]);
+                const antennaHeight = values.length > 3 ? parseFloat(values[values.length - 1]) : 0;
+                
+                if (!name || isNaN(val1) || isNaN(val2) || isNaN(antennaHeight)) continue;
+                
+                let lat, lon;
+                
+                if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180) {
+                    lat = val1;
+                    lon = val2;
+                } else {
+                    if (!coordSystemId) { throw new Error("XY座標が検出されましたが、有効な座標系が選択されていません。"); }
+                    const easting = val1;
+                    const northing = val2;
+                    const latLon = xyToLatLon(easting, northing, coordSystemId);
+                    lat = latLon.lat;
+                    lon = latLon.lon;
+                }
+                
+                if (isNaN(lat) || isNaN(lon)) { console.warn(`行 ${i+1} のデータが無効か、座標系の設定が間違っている可能性があります: ${dataLines[i]}`); continue; }
+                
+                points.push({ id: `${fileName}-${i}`, name: name, lat: lat, lon: lon, antennaHeight: antennaHeight, time: '', cmtText: `(CSV Import)`, pointGeoidHeight: 0, ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {} });
+            }
+            return points;
+        }
+
+        function showCoordSystemModal(csvContent, fileName) {
+            tempCsvContent = csvContent; tempCsvFileName = fileName;
+            const modal = document.getElementById('coord-modal');
+            const mainSelect = document.getElementById('coordSystem');
+            const modalSelect = document.getElementById('modal-coord-system');
+            modalSelect.innerHTML = mainSelect.innerHTML; modalSelect.value = mainSelect.value;
+            modal.style.display = 'flex';
+        }
+
+function parseCSV(csvText, fileName) {
+    const lines = csvText.trim().split(/\r?\n/);
+    if (lines.length === 0 || (lines.length === 1 && lines[0].trim() === '')) throw new Error("データが空です。");
+
+    // ▼▼▼ 修正箇所 ▼▼▼
+    // ヘッダー行があるかどうかを先に判定
+    const headerLineTest = lines[0].toLowerCase();
+    const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point');
+
+    // ヘッダーがあれば2行目、なければ1行目をチェック対象とする
+    const lineToCheck = hasHeader ? lines[1] : lines[0];
+
+    // チェック対象の行がない場合（ヘッダーしかないファイルなど）はエラー
+    if (!lineToCheck) {
+        throw new Error("データ行が見つかりません。");
+    }
+    
+    const valuesToCheck = parseCSVLine(lineToCheck);
+    if (valuesToCheck.length < 3) throw new Error("データは少なくとも3列（測点名, X/緯度, Y/経度）必要です。");
+    
+    const val1 = parseFloat(valuesToCheck[1]);
+    const val2 = parseFloat(valuesToCheck[2]);
+    
+    // val1やval2が数値でない場合(NaN)も考慮し、isLatLon判定を行う
+    const isLatLon = !isNaN(val1) && !isNaN(val2) && Math.abs(val1) <= 90 && Math.abs(val2) <= 180;
+    // ▲▲▲ 修正箇所 ▲▲▲
+    
+    if (isLatLon) {
+        const coordSystemId = document.getElementById('coordSystem').value;
+        return processCsvPoints(csvText, fileName, coordSystemId);
+    } else {
+        showCoordSystemModal(csvText, fileName);
+        return null;
+    }
+}
+
+        function processFiles(files) {
+            const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6'];
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                const fileType = file.name.toLowerCase().endsWith('.gpx') ? 'gpx' : (file.name.toLowerCase().endsWith('.csv') || file.name.toLowerCase().endsWith('.txt') ? 'csv' : null);
+                if (!fileType) return;
+                reader.onload = (e) => {
+                    try {
+                        const content = e.target.result; let points = [];
+                        if (fileType === 'gpx') {
+                            points = parseGPX(content, file.name);
+                            if(points.length === 0) { alert(`ファイル「${file.name}」に測点(<wpt>)がありません。`); return; }
+                        } else {
+                            points = parseCSV(content, file.name);
+                            if (points === null) return;
+                            if(points.length === 0) { alert(`ファイル「${file.name}」から有効な測点を読み込めませんでした。`); return; }
+                        }
+                        loadedFiles[file.name] = { points, visible: true, color: colors[Object.keys(loadedFiles).length % colors.length], gpxContent: fileType === 'gpx' ? content : null };
+                        updateFileListUI(); updateUI();
+                    } catch (err) { alert(`ファイル解析エラー (${file.name}): ${err.message}`); }
+                };
+                reader.readAsText(file);
+            });
+        }
+
         function updateUI() { activePoints = []; for (const f in loadedFiles) { if (loadedFiles[f].visible) activePoints.push(...loadedFiles[f].points); } rerenderUI(); }
         
         function rerenderUI(highlightPointId = null) {
-            const sys = document.getElementById('coordSystem').value, pole = parseFloat(document.getElementById('poleHeight').value), params = jprcsParams[sys];
-            const processedPoints = activePoints.map(p => ({ ...p, x: latLonToXY(p.lat, p.lon, params).x, y: latLonToXY(p.lat, p.lon, params).y, correctedEle: p.antennaHeight - pole }));
-            displayTable(processedPoints, highlightPointId);
-            addMarkersAndLine(processedPoints);
-            displayXYPlot(processedPoints, highlightPointId);
+            const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value);
+            const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
+            displayTable(processedPoints, highlightPointId); addMarkersAndLine(processedPoints); displayXYPlot(processedPoints, highlightPointId);
             const hasPoints = activePoints.length > 0;
-            document.getElementById('downloadCsvBtn').style.visibility = hasPoints ? 'visible' : 'hidden';
-            document.getElementById('downloadDxfBtn').style.visibility = hasPoints ? 'visible' : 'hidden';
-            if (Object.keys(loadedFiles).length === 0) document.getElementById('tableContainer').innerHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">GPXファイルをインポート、またはプロジェクトファイルを読み込んでください</div>`;
+            document.getElementById('downloadCsvBtn').style.visibility = hasPoints ? 'visible' : 'hidden'; document.getElementById('downloadDxfBtn').style.visibility = hasPoints ? 'visible' : 'hidden';
+            if (Object.keys(loadedFiles).length === 0) document.getElementById('tableContainer').innerHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">GPX/CSVファイルをインポート、またはプロジェクトファイルを読み込んでください</div>`;
         }
         
         function displayTable(points, highlightPointId) {
             let tableHTML = `<table><thead><tr><th><span title="ドラッグで並べ替え">&#x2195;</span></th><th class="mobile-hidden-col">ファイル名</th><th title="ダブルクリックで編集">測点名</th><th class="mobile-hidden-col">測定日時</th><th>緯度</th><th>経度</th><th>X (m)</th><th>Y (m)</th><th title="ダブルクリックで編集">アンテナ高</th><th>補正後標高</th></tr></thead><tbody>`;
-            if (points.length === 0) { tableHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">表示する測点がありません</div>`;
-            } else { 
+            if (points.length === 0) { tableHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">表示する測点がありません</div>`; } else { 
                 points.forEach(p => {
-                    const highlightClass = p.id === highlightPointId ? 'highlighted' : '';
-                    const nameModifiedClass = p.modifiedFields?.name ? 'modified-cell' : '';
-                    const antennaHeightModifiedClass = p.modifiedFields?.antennaHeight ? 'modified-cell' : '';
-                    const inSectionClass = pointsInLastSectionIds.has(p.id) ? 'in-section' : '';
+                    const highlightClass = p.id === highlightPointId ? 'highlighted' : ''; const nameModifiedClass = p.modifiedFields?.name ? 'modified-cell' : ''; const antennaHeightModifiedClass = p.modifiedFields?.antennaHeight ? 'modified-cell' : '';
+                    const inSectionClass = pointsInLastSectionIds.includes(p.id) ? 'in-section' : '';
                     tableHTML += `<tr data-id="${p.id}" class="${highlightClass} ${inSectionClass}">
-                        <td class="drag-handle">&#x2195;</td>
-                        <td class="mobile-hidden-col">${p.fileName}</td>
+                        <td class="drag-handle">&#x2195;</td><td class="mobile-hidden-col">${p.fileName}</td>
                         <td class="editable-cell ${nameModifiedClass}" data-field="name"><strong>${p.name}</strong></td>
                         <td class="mobile-hidden-col">${p.time ? new Date(p.time).toLocaleString('ja-JP', { hour12: false }).replace(/\//g, '-') : 'N/A'}</td>
-                        <td>${p.lat.toFixed(9)}</td><td>${p.lon.toFixed(9)}</td>
-                        <td>${p.x.toFixed(3)}</td><td>${p.y.toFixed(3)}</td>
+                        <td>${p.lat.toFixed(9)}</td><td>${p.lon.toFixed(9)}</td><td>${p.x.toFixed(3)}</td><td>${p.y.toFixed(3)}</td>
                         <td class="editable-cell ${antennaHeightModifiedClass}" data-field="antennaHeight"><strong>${p.antennaHeight.toFixed(3)}</strong></td>
-                        <td>${p.correctedEle.toFixed(3)}</td>
-                    </tr>`;
+                        <td>${p.correctedEle.toFixed(3)}</td></tr>`;
                 });
                 tableHTML += `</tbody></table>`; 
             }
@@ -241,165 +540,35 @@
         }
 
         Chart.register(window.ChartZoom);
-
-        const xyPlotAspectRatioPlugin = {
-            id: 'xyPlotAspectRatio',
-            afterDataLimits: (chart) => {
-                if (!document.getElementById('aspectRatioToggle').checked || (chart.isZoomedOrPanned && chart.isZoomedOrPanned())) {
-                    return;
-                }
-                const { x, y } = chart.scales;
-                if (!x.width || !y.height) return;
-                const xRange = x.max - x.min;
-                const yRange = y.max - y.min;
-                if (xRange <= 0 || yRange <= 0) return;
-                const xPixelPerUnit = x.width / xRange;
-                const yPixelPerUnit = y.height / yRange;
-                if (xPixelPerUnit > yPixelPerUnit) {
-                    const newRange = x.width / yPixelPerUnit;
-                    const diff = newRange - xRange;
-                    x.min -= diff / 2;
-                    x.max += diff / 2;
-                } else {
-                    const newRange = y.height / xPixelPerUnit;
-                    const diff = newRange - yRange;
-                    y.min -= diff / 2;
-                    y.max += diff / 2;
-                }
-            }
-        };
+        const xyPlotAspectRatioPlugin = { id: 'xyPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('aspectRatioToggle').checked || (chart.isZoomedOrPanned && chart.isZoomedOrPanned())) { return; } const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
         
         function displayXYPlot(points, highlightPointId) {
             const ctx = document.getElementById('xyPlot');
-            if (points.length === 0) {
-                if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-                return;
-            }
-
+            if (points.length === 0) { if (chartInstance) { chartInstance.destroy(); chartInstance = null; } return; }
             const datasets = {}, lineDatasets = {};
             points.forEach((p, index) => {
-                if (!datasets[p.fileName]) {
-                    datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] };
-                    lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName].color, borderWidth: 1, pointRadius: 0, showInLegend: false };
-                }
+                if (!datasets[p.fileName]) { datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] }; lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName].color, borderWidth: 1, pointRadius: 0, showInLegend: false }; }
                 datasets[p.fileName].data.push({ x: p.y, y: p.x });
-                
-                if (p.id === highlightPointId) {
-                    datasets[p.fileName].pointRadius.push(10);
-                    datasets[p.fileName].backgroundColor.push('#ff0000');
-                    datasets[p.fileName].borderColor.push('#000000');
-                    datasets[p.fileName].borderWidth.push(2);
-                } else if (pointsInLastSectionIds.has(p.id)) {
-                    datasets[p.fileName].pointRadius.push(6);
-                    datasets[p.fileName].backgroundColor.push('#c79fef');
-                    datasets[p.fileName].borderColor.push('#5d3d7e');
-                    datasets[p.fileName].borderWidth.push(1);
-                } else {
-                    datasets[p.fileName].pointRadius.push(5);
-                    datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName].color + 'B3');
-                    datasets[p.fileName].borderColor.push(loadedFiles[p.fileName].color);
-                    datasets[p.fileName].borderWidth.push(1);
-                }
-                datasets[p.fileName].originalIndices.push(index);
-                lineDatasets[p.fileName].data.push({ x: p.y, y: p.x });
+                if (p.id === highlightPointId) { datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2); } else if (pointsInLastSectionIds.includes(p.id)) { datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1); } else { datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName].color + 'B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName].color); datasets[p.fileName].borderWidth.push(1); }
+                datasets[p.fileName].originalIndices.push(index); lineDatasets[p.fileName].data.push({ x: p.y, y: p.x });
             });
             const finalDatasets = document.getElementById('toggleLineOnPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets);
-            
             const annotations = {};
-            if (isSectionLineDefined && lastDefinedSectionLinePoints) {
-                const line = lastDefinedSectionLinePoints;
-                const p1 = line[0];
-                const p2 = line[line.length - 1];
-                annotations.sectionLine = { type: 'line', xMin: p1.x, yMin: p1.y, xMax: p2.x, yMax: p2.y, borderColor: 'red', borderWidth: 2 };
-            }
-
-            if (chartInstance) {
-                chartInstance.data.datasets = finalDatasets;
-                chartInstance.options.plugins.annotation.annotations = annotations;
-                chartInstance.update();
+            if (isSectionLineDefined && lastDefinedSectionLinePoints) { const line = lastDefinedSectionLinePoints; const p1 = line[0]; const p2 = line[line.length - 1]; annotations.sectionLine = { type: 'line', xMin: p1.x, yMin: p1.y, xMax: p2.x, yMax: p2.y, borderColor: 'red', borderWidth: 2 }; }
+            if (chartInstance) { chartInstance.data.datasets = finalDatasets; chartInstance.options.plugins.annotation.annotations = annotations; chartInstance.update();
             } else {
                 chartInstance = new Chart(ctx, {
-                    data: { datasets: finalDatasets },
-                    plugins: [xyPlotAspectRatioPlugin],
-                    options: {
-                        animation: false,
-                        maintainAspectRatio: false,
-                        scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: 'X座標 (m)' } } },
-                        plugins: { 
-                            annotation: { annotations }, 
-                            tooltip: { filter: (item) => item.dataset.type === 'scatter', callbacks: { label: ctx => `${activePoints[Object.values(datasets)[ctx.datasetIndex].originalIndices[ctx.dataIndex]].name}: (Y=${ctx.parsed.x.toFixed(3)}, X=${ctx.parsed.y.toFixed(3)})` } },
-                            zoom: {
-                                zoom: { wheel: { enabled: true }, mode: 'xy' },
-                                pan: { enabled: true, mode: 'xy' }
-                            }
-                        },
-                        onClick: (evt) => { 
-                             if (chartInstance.isZoomedOrPanned() && evt.native.detail === 2) {
-                                chartInstance.resetZoom();
-                                return;
-                            }
-                            handlePlotClick(evt);
-                        },
+                    data: { datasets: finalDatasets }, plugins: [xyPlotAspectRatioPlugin],
+                    options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: 'X座標 (m)' } } }, plugins: { annotation: { annotations }, tooltip: { filter: (item) => item.dataset.type === 'scatter', callbacks: { label: ctx => `${activePoints[Object.values(datasets)[ctx.datasetIndex].originalIndices[ctx.dataIndex]].name}: (Y=${ctx.parsed.x.toFixed(3)}, X=${ctx.parsed.y.toFixed(3)})` } }, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } } },
+                        onClick: (evt) => { if (chartInstance.isZoomedOrPanned() && evt.native.detail === 2) { chartInstance.resetZoom(); return; } handlePlotClick(evt); },
                     }
                 });
             }
         }
         
         function addMarkersAndLine(points) { polylineLayer.clearLayers(); if (mapSectionLine) polylineLayer.addLayer(mapSectionLine); const allBounds = []; const pointsByFile = {}; points.forEach(p => { const marker = L.marker([p.lat, p.lon]); marker.bindPopup(`<strong>${p.name}</strong><br>標高: ${p.correctedEle.toFixed(3)}m`); polylineLayer.addLayer(marker); p.marker = marker; allBounds.push([p.lat, p.lon]); if (!pointsByFile[p.fileName]) pointsByFile[p.fileName] = []; pointsByFile[p.fileName].push(p); }); for (const f in pointsByFile) { if (pointsByFile[f].length > 1) { const latlngs = pointsByFile[f].map(p => [p.lat, p.lon]); polylineLayer.addLayer(L.polyline(latlngs, { color: loadedFiles[f].color, weight: 2 })); } } if (allBounds.length > 0 && !isSectionMode) map.fitBounds(allBounds, { padding: [50, 50] }); }
-        
         window.focusOnPoint = (event, pointId) => { if (!pointId || (event && event.target.tagName.toLowerCase() === 'input')) return; rerenderUI(pointId); const point = activePoints.find(p => p.id === pointId); if (point?.marker) { point.marker.openPopup(); map.setView(point.marker.getLatLng(), 18); } const row = document.querySelector(`tr[data-id="${pointId}"]`); if(row) row.scrollIntoView({ behavior: 'auto', block: 'center' }); };
-        
-        function handleTableCellEdit(e) {
-            const cell = e.target.closest('.editable-cell');
-            if (!cell || cell.querySelector('input')) return;
-            const originalText = cell.querySelector('strong')?.textContent || cell.textContent;
-            const field = cell.dataset.field;
-            const pointId = cell.parentElement.dataset.id;
-            cell.innerHTML = `<input type="text" value="${originalText.trim()}" />`;
-            const input = cell.querySelector('input');
-            input.focus();
-            input.select();
-            
-            const save = () => {
-                const point = activePoints.find(p => p.id === pointId);
-                const masterPoint = loadedFiles[point.fileName].points.find(p => p.id === pointId);
-                const newValue = input.value;
-                let originalValue;
-                let changed = false;
-                
-                if (field === 'antennaHeight') {
-                    originalValue = parseFloat(masterPoint.antennaHeight);
-                    const num = parseFloat(newValue);
-                    if (!isNaN(num) && originalValue.toFixed(3) !== num.toFixed(3)) {
-                        point.antennaHeight = masterPoint.antennaHeight = num;
-                        changed = true;
-                    }
-                } else { // name
-                    originalValue = masterPoint.name;
-                    if (originalValue !== newValue) {
-                        point.name = masterPoint.name = newValue;
-                        changed = true;
-                    }
-                }
-                
-                if (changed) {
-                    masterPoint.modifiedFields[field] = true;
-                }
-                
-                rerenderUI(pointId);
-            };
-            
-            input.addEventListener('blur', save);
-            input.addEventListener('keydown', (ev) => {
-                if (ev.key === 'Enter') input.blur();
-                if (ev.key === 'Escape') {
-                    input.removeEventListener('blur', save);
-                    rerenderUI(pointId);
-                }
-            });
-        }
-
-        function processFiles(files) { const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6']; Array.from(files).forEach(file => { if (!file.name.toLowerCase().endsWith('.gpx')) return; const reader = new FileReader(); reader.onload = (e) => { try { const gpxContent = e.target.result; const points = parseGPX(gpxContent, file.name); if(points.length === 0) { alert(`ファイル「${file.name}」に測点(<wpt>)がありません。`); return; } loadedFiles[file.name] = { points, visible: true, color: colors[Object.keys(loadedFiles).length % colors.length], gpxContent }; } catch (err) { alert(`GPX解析エラー (${file.name}): ${err.message}`); } finally { updateFileListUI(); updateUI(); } }; reader.readAsText(file); }); }
+        function handleTableCellEdit(e) { const cell = e.target.closest('.editable-cell'); if (!cell || cell.querySelector('input')) return; const originalText = cell.querySelector('strong')?.textContent || cell.textContent; const field = cell.dataset.field; const pointId = cell.parentElement.dataset.id; cell.innerHTML = `<input type="text" value="${originalText.trim()}" />`; const input = cell.querySelector('input'); input.focus(); input.select(); const save = () => { const point = activePoints.find(p => p.id === pointId); const masterPoint = loadedFiles[point.fileName].points.find(p => p.id === pointId); const newValue = input.value; let changed = false; if (field === 'antennaHeight') { const num = parseFloat(newValue); if (!isNaN(num) && masterPoint.antennaHeight.toFixed(3) !== num.toFixed(3)) { point.antennaHeight = masterPoint.antennaHeight = num; changed = true; } } else { if (masterPoint.name !== newValue) { point.name = masterPoint.name = newValue; changed = true; } } if (changed) { masterPoint.modifiedFields[field] = true; } rerenderUI(pointId); }; input.addEventListener('blur', save); input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { input.removeEventListener('blur', save); rerenderUI(pointId); } }); }
         function updateFileListUI() { const panel = document.getElementById('file-list-panel'); document.getElementById('file-list-panel-container').style.display = Object.keys(loadedFiles).length > 0 ? 'block' : 'none'; panel.innerHTML = ''; for (const f in loadedFiles) { const item = document.createElement('div'); item.className = 'file-item'; item.innerHTML = `<input type="checkbox" id="check-${f}" ${loadedFiles[f].visible?'checked':''}> <label for="check-${f}" title="${f}">${f}</label> <button class="delete-btn" title="削除">&times;</button>`; panel.appendChild(item); item.querySelector('input').addEventListener('change', (e) => { loadedFiles[f].visible = e.target.checked; updateUI(); }); item.querySelector('button').addEventListener('click', () => { delete loadedFiles[f]; updateFileListUI(); updateUI(); }); } }
         
         function toggleSectionLineMode() {
@@ -407,29 +576,18 @@
             const btn = document.getElementById('section-line-btn');
             const status = document.getElementById('section-status');
             const canvas = document.getElementById('xyPlot');
-            const modeSelect = document.getElementById('section-mode-select');
             const createBtn = document.getElementById('create-section-profile-btn');
             
             btn.classList.toggle('active', isSectionMode);
-            modeSelect.disabled = isSectionMode;
+            sectionLineStart = null; isSectionLineDefined = false; lastDefinedSectionLinePoints = null;
+            createBtn.disabled = true; canvas.classList.remove('crosshair', 'editable-section');
             
-            sectionLineStart = null;
-            isSectionLineDefined = false;
-            lastDefinedSectionLinePoints = null;
-            
-            createBtn.disabled = true;
-            canvas.classList.remove('crosshair', 'editable-section');
-
             if (isSectionMode) {
                 const aspectRatioToggle = document.getElementById('aspectRatioToggle');
-                if (aspectRatioToggle.checked) {
-                    aspectRatioToggle.checked = false;
-                    aspectRatioToggle.dispatchEvent(new Event('change'));
-                }
-                
+                if (aspectRatioToggle.checked) { aspectRatioToggle.checked = false; aspectRatioToggle.dispatchEvent(new Event('change')); }
                 status.style.display = 'inline';
                 canvas.classList.add('crosshair');
-                const mode = modeSelect.value;
+                const mode = document.getElementById('section-mode-select').value;
                 switch(mode) {
                     case '2-point': status.textContent = 'ドラッグして断面線を設定'; break;
                     case 'vertical': status.textContent = 'クリックして鉛直線の位置を決定'; break;
@@ -437,463 +595,474 @@
                 }
             } else {
                 status.style.display = 'none';
-                pointsInLastSectionIds.clear();
+                pointsInLastSectionIds = [];
             }
-
-            if (!isSectionMode) {
-                rerenderUI();
-            }
+            if (!isSectionMode) { rerenderUI(); }
         }
         
-        function getChartCoordsFromClick(e) { 
-            if (!chartInstance) return null;
-            return { 
-                x: chartInstance.scales.x.getValueForPixel(e.x), 
-                y: chartInstance.scales.y.getValueForPixel(e.y) 
-            };
-        }
-        
-        // ▼▼▼【変更】ここからタッチ操作対応のための修正 ▼▼▼
-
-        /**
-         * マウスイベントまたはタッチイベントから、Chart.jsキャンバス上の座標を取得する
-         * @param {Event} e - マウスイベントまたはタッチイベント
-         * @returns {{x: number, y: number}|null} Chart.jsのデータ座標、またはnull
-         */
-        function getChartCoordsFromCanvasEvent(e) {
-            if (!chartInstance) return null;
-
-            let clientX, clientY;
-            const eventType = e.type;
-
-            // イベントタイプに応じて座標の基点を取得
-            if (eventType.startsWith('touch')) {
-                // タッチイベントの場合、スクロール等のデフォルト動作を抑制
-                e.preventDefault();
-                // touchendの場合はchangedTouchesを、それ以外はtouchesを使用
-                const touch = (eventType === 'touchend' || eventType === 'touchcancel')
-                    ? e.changedTouches[0]
-                    : e.touches[0];
-                if (!touch) return null; // 指が離れた後などでtouchオブジェクトがない場合は終了
-                clientX = touch.clientX;
-                clientY = touch.clientY;
-            } else {
-                // マウスイベントの場合
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            // キャンバスの画面上の位置を取得し、相対座標を計算
-            const rect = e.target.getBoundingClientRect();
-            const offsetX = clientX - rect.left;
-            const offsetY = clientY - rect.top;
-            
-            // 相対座標をChart.jsのスケール上の値に変換
-            return {
-                x: chartInstance.scales.x.getValueForPixel(offsetX),
-                y: chartInstance.scales.y.getValueForPixel(offsetY)
-            };
-        }
-
-        /**
-         * 断面線描画の開始処理 (mousedown, touchstart)
-         */
-        function handlePlotDrawStart(e) {
-            if (!isSectionMode || isSectionLineDefined || document.getElementById('section-mode-select').value !== '2-point') return;
-            isDrawingSectionLine = true;
-            sectionLineStart = getChartCoordsFromCanvasEvent(e);
-        }
-
-        /**
-         * 断面線描画中の処理 (mousemove, touchmove)
-         */
-        function handlePlotDrawMove(e) {
-            if (!sectionLineStart || !isDrawingSectionLine) return;
-            const current = getChartCoordsFromCanvasEvent(e);
-            if (current) {
-                const annotations = chartInstance.options.plugins.annotation.annotations;
-                if (!annotations.tempLine) {
-                    annotations.tempLine = { type: 'line', xMin: sectionLineStart.x, yMin: sectionLineStart.y, xMax: current.x, yMax: current.y, borderColor: 'rgba(255,0,0,0.5)', borderWidth: 2, drawTime: 'afterDraw' };
-                } else {
-                    annotations.tempLine.xMax = current.x;
-                    annotations.tempLine.yMax = current.y;
-                }
-                chartInstance.update('none');
-            }
-        }
-
-        /**
-         * 断面線描画の終了処理 (mouseup, touchend)
-         */
-        function handlePlotDrawEnd(e) {
-            if (!sectionLineStart || !isDrawingSectionLine) return;
-            isDrawingSectionLine = false;
-            const end = getChartCoordsFromCanvasEvent(e);
-            delete chartInstance.options.plugins.annotation.annotations.tempLine;
-            if (end) {
-                // 開始点と終了点が同じ場合はクリックとみなし、何もしない
-                if (Math.abs(sectionLineStart.x - end.x) > 1e-6 || Math.abs(sectionLineStart.y - end.y) > 1e-6) {
-                    defineSectionLineOnMapAndChart([sectionLineStart, end]);
-                }
-            }
-            sectionLineStart = null;
-        }
-
-        // ▲▲▲【変更】ここまでタッチ操作対応のための修正 ▲▲▲
+        function getChartCoordsFromClick(e) { if (!chartInstance) return null; return { x: chartInstance.scales.x.getValueForPixel(e.x), y: chartInstance.scales.y.getValueForPixel(e.y) }; }
+        function getChartCoordsFromCanvasEvent(e) { if (!chartInstance) return null; let clientX, clientY; const eventType = e.type; if (eventType.startsWith('touch')) { e.preventDefault(); const touch = (eventType === 'touchend' || eventType === 'touchcancel') ? e.changedTouches[0] : e.touches[0]; if (!touch) return null; clientX = touch.clientX; clientY = touch.clientY; } else { clientX = e.clientX; clientY = e.clientY; } const rect = e.target.getBoundingClientRect(); const offsetX = clientX - rect.left; const offsetY = clientY - rect.top; return { x: chartInstance.scales.x.getValueForPixel(offsetX), y: chartInstance.scales.y.getValueForPixel(offsetY) }; }
+        function handlePlotDrawStart(e) { if (!isSectionMode || isSectionLineDefined || document.getElementById('section-mode-select').value !== '2-point') return; isDrawingSectionLine = true; sectionLineStart = getChartCoordsFromCanvasEvent(e); }
+        function handlePlotDrawMove(e) { if (!sectionLineStart || !isDrawingSectionLine) return; const current = getChartCoordsFromCanvasEvent(e); if (current) { const annotations = chartInstance.options.plugins.annotation.annotations; if (!annotations.tempLine) { annotations.tempLine = { type: 'line', xMin: sectionLineStart.x, yMin: sectionLineStart.y, xMax: current.x, yMax: current.y, borderColor: 'rgba(255,0,0,0.5)', borderWidth: 2, drawTime: 'afterDraw' }; } else { annotations.tempLine.xMax = current.x; annotations.tempLine.yMax = current.y; } chartInstance.update('none'); } }
+        function handlePlotDrawEnd(e) { if (!sectionLineStart || !isDrawingSectionLine) return; isDrawingSectionLine = false; const end = getChartCoordsFromCanvasEvent(e); delete chartInstance.options.plugins.annotation.annotations.tempLine; if (end) { if (Math.abs(sectionLineStart.x - end.x) > 1e-6 || Math.abs(sectionLineStart.y - end.y) > 1e-6) { defineSectionLineOnMapAndChart([sectionLineStart, end]); } } sectionLineStart = null; }
 
         function handlePlotClick(evt) {
             const elems = chartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-            
             if (isSectionMode) {
-                if (isSectionLineDefined) { // Interactive editing phase
+                if (isSectionLineDefined) {
                     const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter');
                     if (scatterElems.length > 0) {
-                        const elem = scatterElems[0];
-                        const ds = chartInstance.data.datasets[elem.datasetIndex];
-                        const ptIdx = ds.originalIndices[elem.index];
-                        const pointId = activePoints[ptIdx].id;
-
-                        if (pointsInLastSectionIds.has(pointId)) {
-                            pointsInLastSectionIds.delete(pointId);
-                        } else {
-                            pointsInLastSectionIds.add(pointId);
-                        }
+                        const elem = scatterElems[0]; const ds = chartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; const pointId = activePoints[ptIdx].id;
+                        const indexInSelection = pointsInLastSectionIds.indexOf(pointId);
+                        if (indexInSelection > -1) { pointsInLastSectionIds.splice(indexInSelection, 1); } else { pointsInLastSectionIds.push(pointId); }
+                        document.getElementById('create-section-profile-btn').disabled = pointsInLastSectionIds.length < 2;
                         updateSelectionHighlights();
                     }
-                } else { // Drawing phase
-                    const mode = document.getElementById('section-mode-select').value;
-                    const point = getChartCoordsFromClick(evt);
-                    if (!point) return;
-
-                    const { x: scaleX, y: scaleY } = chartInstance.scales;
-                    let linePoints = null;
-
-                    switch(mode) {
-                        case 'vertical': 
-                            linePoints = [{x: point.x, y: scaleY.min}, {x: point.x, y: scaleY.max}];
-                            break;
-                        case 'horizontal':
-                            linePoints = [{x: scaleX.min, y: point.y}, {x: scaleX.max, y: point.y}];
-                            break;
-                    }
-                    if(linePoints) {
-                        defineSectionLineOnMapAndChart(linePoints);
-                    }
+                } else {
+                    const mode = document.getElementById('section-mode-select').value; const point = getChartCoordsFromClick(evt); if (!point) return; const { x: scaleX, y: scaleY } = chartInstance.scales; let linePoints = null;
+                    switch(mode) { case 'vertical': linePoints = [{x: point.x, y: scaleY.min}, {x: point.x, y: scaleY.max}]; break; case 'horizontal': linePoints = [{x: scaleX.min, y: point.y}, {x: scaleX.max, y: point.y}]; break; }
+                    if(linePoints) { defineSectionLineOnMapAndChart(linePoints); }
                 }
-            } else { // Not in section mode, focus on point
-                const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter');
-                if (scatterElems.length > 0) { 
-                    const elem = scatterElems[0];
-                    const ds = chartInstance.data.datasets[elem.datasetIndex]; 
-                    const ptIdx = ds.originalIndices[elem.index]; 
-                    focusOnPoint(null, activePoints[ptIdx].id); 
-                }
-            }
+            } else { const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter'); if (scatterElems.length > 0) { const elem = scatterElems[0]; const ds = chartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } }
         }
         
         function updateSelectionHighlights() {
-            document.querySelectorAll('#tableContainer tr[data-id]').forEach(row => {
-                row.classList.toggle('in-section', pointsInLastSectionIds.has(row.dataset.id));
-            });
-
-            if (!chartInstance) return;
-            const highlightPointId = document.querySelector('tr.highlighted')?.dataset.id;
-            
-            chartInstance.data.datasets.forEach(dataset => {
-                if (dataset.type !== 'scatter') return;
-                
-                dataset.originalIndices.forEach((originalIndex, dataIndex) => {
-                    const point = activePoints[originalIndex];
-                    if (!point) return;
-
-                    if (point.id === highlightPointId) {
-                        dataset.pointRadius[dataIndex] = 10;
-                        dataset.backgroundColor[dataIndex] = '#ff0000';
-                        dataset.borderColor[dataIndex] = '#000000';
-                        dataset.borderWidth[dataIndex] = 2;
-                    } else if (pointsInLastSectionIds.has(point.id)) {
-                        dataset.pointRadius[dataIndex] = 6;
-                        dataset.backgroundColor[dataIndex] = '#c79fef';
-                        dataset.borderColor[dataIndex] = '#5d3d7e';
-                        dataset.borderWidth[dataIndex] = 1;
-                    } else {
-                        dataset.pointRadius[dataIndex] = 5;
-                        dataset.backgroundColor[dataIndex] = loadedFiles[point.fileName].color + 'B3';
-                        dataset.borderColor[dataIndex] = loadedFiles[point.fileName].color;
-                        dataset.borderWidth[dataIndex] = 1;
-                    }
-                });
-            });
+            document.querySelectorAll('#tableContainer tr[data-id]').forEach(row => { row.classList.toggle('in-section', pointsInLastSectionIds.includes(row.dataset.id)); });
+            if (!chartInstance) return; const highlightPointId = document.querySelector('tr.highlighted')?.dataset.id;
+            chartInstance.data.datasets.forEach(dataset => { if (dataset.type !== 'scatter') return; dataset.originalIndices.forEach((originalIndex, dataIndex) => { const point = activePoints[originalIndex]; if (!point) return; if (point.id === highlightPointId) { dataset.pointRadius[dataIndex] = 10; dataset.backgroundColor[dataIndex] = '#ff0000'; dataset.borderColor[dataIndex] = '#000000'; dataset.borderWidth[dataIndex] = 2; } else if (pointsInLastSectionIds.includes(point.id)) { dataset.pointRadius[dataIndex] = 6; dataset.backgroundColor[dataIndex] = '#c79fef'; dataset.borderColor[dataIndex] = '#5d3d7e'; dataset.borderWidth[dataIndex] = 1; } else { dataset.pointRadius[dataIndex] = 5; dataset.backgroundColor[dataIndex] = loadedFiles[point.fileName].color + 'B3'; dataset.borderColor[dataIndex] = loadedFiles[point.fileName].color; dataset.borderWidth[dataIndex] = 1; } }); });
             chartInstance.update('none');
         }
 
         function defineSectionLineOnMapAndChart(linePoints) {
-            isSectionLineDefined = true;
-            lastDefinedSectionLinePoints = linePoints;
-
-            document.getElementById('xyPlot').classList.remove('crosshair');
-            document.getElementById('xyPlot').classList.add('editable-section');
-            
-            const params = jprcsParams[document.getElementById('coordSystem').value];
-            const latLonLine = linePoints.map(p => xyToLatLon(p.y, p.x, params));
-            lastSectionCoords = { path: latLonLine, pathXY: linePoints };
-            if (mapSectionLine) map.removeLayer(mapSectionLine);
-            const mapLineCoords = latLonLine.map(p => [p.lat, p.lon]);
-            mapSectionLine = L.polyline(mapLineCoords, { color: 'red', weight: 3, dashArray: '5, 5' }).addTo(polylineLayer);
-            
-            document.getElementById('create-section-profile-btn').disabled = false;
+            isSectionLineDefined = true; lastDefinedSectionLinePoints = linePoints; document.getElementById('xyPlot').classList.remove('crosshair'); document.getElementById('xyPlot').classList.add('editable-section');
+            const systemId = document.getElementById('coordSystem').value;
+            const latLonLine = linePoints.map(p => xyToLatLon(p.y, p.x, systemId));
+            lastSectionCoords = { path: latLonLine, pathXY: linePoints }; if (mapSectionLine) map.removeLayer(mapSectionLine); const mapLineCoords = latLonLine.map(p => [p.lat, p.lon]); mapSectionLine = L.polyline(mapLineCoords, { color: 'red', weight: 3, dashArray: '5, 5' }).addTo(polylineLayer);
             document.getElementById('section-status').textContent = '点をクリックして断面に含める測点を編集できます';
-
-            const width = parseFloat(document.getElementById('section-width-input').value);
-            if(isNaN(width) || width <= 0) return;
-
-            pointsInLastSectionIds.clear();
+            const width = parseFloat(document.getElementById('section-width-input').value); if(isNaN(width) || width <= 0) return;
+            pointsInLastSectionIds = [];
             activePoints.forEach(p => {
-                const sys = document.getElementById('coordSystem').value;
-                const params = jprcsParams[sys];
-                const p_xy = latLonToXY(p.lat, p.lon, params);
-                const pt = { x: p_xy.y, y: p_xy.x };
-                const closestInfo = findClosestPointOnPolyline(pt, lastDefinedSectionLinePoints);
-                if (closestInfo.distance <= width / 2) {
-                    pointsInLastSectionIds.add(p.id);
-                }
+                const p_xy = latLonToXY(p.lat, p.lon, systemId); const pt = { x: p_xy.y, y: p_xy.x }; const closestInfo = findClosestPointOnPolyline(pt, lastDefinedSectionLinePoints);
+                if (closestInfo.distance <= width / 2) { pointsInLastSectionIds.push(p.id); }
             });
+            document.getElementById('create-section-profile-btn').disabled = pointsInLastSectionIds.length < 2;
             rerenderUI();
         }
 
+        function updateSectionPlot(sectionType) {
+            if (pointsInLastSectionIds.length < 2) { currentSectionData = []; }
+            else if (sectionType === 'projected' && !lastDefinedSectionLinePoints) { currentSectionData = []; }
+            else {
+                const systemId = document.getElementById('coordSystem').value;
+                const pole = parseFloat(document.getElementById('poleHeight').value);
+                const sectionPoints = activePoints.filter(p => pointsInLastSectionIds.includes(p.id));
+
+                if (sectionType === 'projected') {
+                    currentSectionData = sectionPoints.map(p => {
+                        const p_xy = latLonToXY(p.lat, p.lon, systemId);
+                        const pt = { x: p_xy.y, y: p_xy.x }; const closestInfo = findClosestPointOnPolyline(pt, lastDefinedSectionLinePoints);
+                        return { x: closestInfo.distAlong, y: p.antennaHeight - pole, name: p.name, antennaHeight: p.antennaHeight, originalX: p_xy.x, originalY: p_xy.y };
+                    }).sort((a, b) => a.x - b.x);
+                } else { // 'connected'
+                    let cumulativeDistance = 0;
+                    currentSectionData = sectionPoints.map((p, i) => {
+                        const p_xy = latLonToXY(p.lat, p.lon, systemId);
+                        if (i > 0) {
+                            const prev_p = sectionPoints[i-1];
+                            const prev_p_xy = latLonToXY(prev_p.lat, prev_p.lon, systemId);
+                            const dx = p_xy.x - prev_p_xy.x; const dy = p_xy.y - prev_p_xy.y;
+                            cumulativeDistance += Math.sqrt(dx*dx + dy*dy);
+                        }
+                        return { x: cumulativeDistance, y: p.antennaHeight - pole, name: p.name, antennaHeight: p.antennaHeight, originalX: p_xy.x, originalY: p_xy.y };
+                    });
+                }
+            }
+            if (sectionChartInstance) {
+                sectionChartInstance.data.datasets[0].data = currentSectionData;
+                sectionChartInstance.update();
+            }
+        }
+        
         function generateAndShowSectionProfile() {
+            if (pointsInLastSectionIds.length < 2) { alert("断面に含める測点が2つ以上選択されていません。"); return; }
             if (!lastDefinedSectionLinePoints) { alert("断面線が定義されていません。"); return; }
-            if (pointsInLastSectionIds.size === 0) { alert("断面に含める測点が選択されていません。"); return; }
             
-            const params = jprcsParams[document.getElementById('coordSystem').value];
-            const pole = parseFloat(document.getElementById('poleHeight').value);
-            
-            const sectionPoints = activePoints.filter(p => pointsInLastSectionIds.has(p.id));
-            
-            sectionData = sectionPoints.map(p => {
-                const p_xy = latLonToXY(p.lat, p.lon, params);
-                const pt = { x: p_xy.y, y: p_xy.x };
-                const closestInfo = findClosestPointOnPolyline(pt, lastDefinedSectionLinePoints);
-                return {
-                    x: closestInfo.distAlong,
-                    y: p.antennaHeight - pole,
-                    name: p.name,
-                    antennaHeight: p.antennaHeight,
-                    originalX: p_xy.x,
-                    originalY: p_xy.y
-                };
-            });
-            
-            sectionData.sort((a, b) => a.x - b.x);
-            currentSectionData = sectionData;
-            displaySectionProfileModal(sectionData);
+            document.querySelector('#section-type-switch-container input[value="projected"]').checked = true;
+            displaySectionProfileModal();
+            updateSectionPlot('projected');
         }
 
         function findClosestPointOnPolyline(point, polyline) { let bestResult = { distance: Infinity, distAlong: 0 }; let accumulatedLength = 0; for (let i = 0; i < polyline.length - 1; i++) { const p1 = polyline[i]; const p2 = polyline[i+1]; const segLenSq = Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2); let closest; let t = 0; if (segLenSq === 0) { closest = p1; } else { t = ((point.x - p1.x) * (p2.x - p1.x) + (point.y - p1.y) * (p2.y - p1.y)) / segLenSq; t = Math.max(0, Math.min(1, t)); closest = { x: p1.x + t * (p2.x - p1.x), y: p1.y + t * (p2.y - p1.y) }; } const distSq = Math.pow(point.x - closest.x, 2) + Math.pow(point.y - closest.y, 2); if (distSq < bestResult.distance * bestResult.distance) { bestResult.distance = Math.sqrt(distSq); bestResult.distAlong = accumulatedLength + t * Math.sqrt(segLenSq); } accumulatedLength += Math.sqrt(segLenSq); } return bestResult; }
-        
-        const sectionPlotAspectRatioPlugin = {
-            id: 'sectionPlotAspectRatio',
-            afterDataLimits: (chart) => {
-                if (!document.getElementById('sectionAspectRatioToggle').checked) {
-                    return;
-                }
-                const { x, y } = chart.scales;
-                if (!x.width || !y.height) return;
-                const xRange = x.max - x.min;
-                const yRange = y.max - y.min;
-                if (xRange <= 0 || yRange <= 0) return;
-                const xPixelPerUnit = x.width / xRange;
-                const yPixelPerUnit = y.height / yRange;
-                if (xPixelPerUnit > yPixelPerUnit) {
-                    const newRange = x.width / yPixelPerUnit;
-                    const diff = newRange - xRange;
-                    x.min -= diff / 2;
-                    x.max += diff / 2;
-                } else {
-                    const newRange = y.height / xPixelPerUnit;
-                    const diff = newRange - yRange;
-                    y.min -= diff / 2;
-                    y.max += diff / 2;
-                }
-            }
-        };
+        const sectionPlotAspectRatioPlugin = { id: 'sectionPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('sectionAspectRatioToggle').checked) { return; } const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
 
-        function displaySectionProfileModal(data) { 
-            const modal = document.getElementById('section-modal'); 
-            modal.style.display = 'flex'; 
-            const ctx = document.getElementById('sectionPlot'); 
-            if (sectionChartInstance) sectionChartInstance.destroy(); 
-            
-            sectionChartInstance = new Chart(ctx, { 
-                type: 'line', 
-                data: { datasets: [{ label: '断面標高', data: data, borderColor: '#3498db', tension: 0, pointBackgroundColor: '#3498db', showLine: true }] }, 
-                plugins: [sectionPlotAspectRatioPlugin],
-                options: { 
-                    maintainAspectRatio: false, 
-                    scales: { x: { type: 'linear', title: { display: true, text: '始点からの距離 (m)' } }, y: { title: { display: true, text: '補正後標高 (m)' } } }, 
-                    plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw.name}: (距離 ${ctx.parsed.x.toFixed(3)}m, 標高 ${ctx.parsed.y.toFixed(3)}m)` } } } 
-                } 
-            }); 
+        function displaySectionProfileModal() { 
+            const modal = document.getElementById('section-modal'); modal.style.display = 'flex'; const ctx = document.getElementById('sectionPlot'); if (sectionChartInstance) sectionChartInstance.destroy();
+            sectionChartInstance = new Chart(ctx, { type: 'line', data: { datasets: [{ label: '断面標高', data: [], borderColor: '#3498db', tension: 0, pointBackgroundColor: '#3498db', showLine: true }] }, plugins: [sectionPlotAspectRatioPlugin], options: { maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: '始点からの距離 (m)' } }, y: { title: { display: true, text: '補正後標高 (m)' } } }, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw.name}: (距離 ${ctx.parsed.x.toFixed(3)}m, 標高 ${ctx.parsed.y.toFixed(3)}m)` } } } } }); 
             setTimeout(() => sectionChartInstance.resize(), 100); 
         }
         
-        function toDxfUnicode(text) { let result = ''; for (let i = 0; i < text.length; i++) { const char = text[i], charCode = char.charCodeAt(0); if (charCode > 127) { result += `\\U+${charCode.toString(16).padStart(4, '0')}`; } else { result += char; } } return result; }
+        function toDxfUnicode(text) { let result = ''; for (let i = 0; i < text.length; i++) { const char = text[i]; const charCode = char.charCodeAt(0); if (charCode > 127) { result += `\\U+${charCode.toString(16).padStart(4, '0')}`; } else { result += char; } } return result; }
         
-        function generateDxfContent(points, gridInterval) { 
+        function generateDxfHeaderAndTables(isCombined = false) {
             let dxf = `0\nSECTION\n2\nHEADER\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n`;
             dxf += `0\nTABLE\n2\nSTYLE\n70\n1\n0\nSTYLE\n2\nMSP-GOTHIC\n70\n0\n40\n0.0\n41\n1.0\n50\n0.0\n71\n0\n42\n0.25\n3\nMS Pゴシック\n4\n\n0\nENDTAB\n`;
-            dxf += `0\nTABLE\n2\nLAYER\n70\n7\n`;
-            const layers = [ {name: '0_POINTS', color: 1}, {name: '1_TEXT', color: 2}, {name: '2_LINES', color: 3}, {name: '3_SECTION_LINE', color: 1, linetype: 'DASHDOT'}, {name: 'GRID_LINES', color: 8, linetype: 'DOTTED'}, {name: 'GRID_TEXT', color: 8} ]; 
-            layers.forEach(l => { dxf += `0\nLAYER\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\n${l.linetype || 'CONTINUOUS'}\n`; }); 
-            dxf += `0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n`; 
-            if (gridInterval > 0 && points.length > 0) { const minX = Math.min(...points.map(p=>p.y)), maxX = Math.max(...points.map(p=>p.y)); const minY = Math.min(...points.map(p=>p.x)), maxY = Math.max(...points.map(p=>p.x)); const startX = Math.floor(minX / gridInterval) * gridInterval, endX = Math.ceil(maxX / gridInterval) * gridInterval; const startY = Math.floor(minY / gridInterval) * gridInterval, endY = Math.ceil(maxY / gridInterval) * gridInterval; for (let x = startX; x <= endX; x += gridInterval) { dxf += `0\nLINE\n8\nGRID_LINES\n10\n${x}\n20\n${minY}\n30\n0\n11\n${x}\n21\n${maxY}\n31\n0\n`; dxf += `0\nTEXT\n8\nGRID_TEXT\n7\nMSP-GOTHIC\n10\n${x}\n20\n${minY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`; } for (let y = startY; y <= endY; y += gridInterval) { dxf += `0\nLINE\n8\nGRID_LINES\n10\n${minX}\n20\n${y}\n30\n0\n11\n${maxX}\n21\n${y}\n31\n0\n`; dxf += `0\nTEXT\n8\nGRID_TEXT\n7\nMSP-GOTHIC\n10\n${minX}\n20\n${y}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`; } } 
-            points.forEach(p => { dxf += `0\nPOINT\n8\n0_POINTS\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`; dxf += `0\nTEXT\n8\n1_TEXT\n7\nMSP-GOTHIC\n10\n${p.y.toFixed(4) + 0.1}\n20\n${p.x.toFixed(4) + 0.1}\n30\n${p.correctedEle.toFixed(4)}\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`; }); 
-            const pointsByFile = {}; points.forEach(p => { if (!pointsByFile[p.fileName]) pointsByFile[p.fileName] = []; pointsByFile[p.fileName].push(p); }); for(const fileName in pointsByFile) { if(pointsByFile[fileName].length < 2) continue; dxf += `0\nPOLYLINE\n8\n2_LINES\n66\n1\n70\n0\n`; pointsByFile[fileName].forEach(p => { dxf += `0\nVERTEX\n8\n2_LINES\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`; }); dxf += `0\nSEQEND\n`; } if(lastSectionCoords && lastSectionCoords.pathXY.length > 1) { dxf += `0\nPOLYLINE\n8\n3_SECTION_LINE\n66\n1\n70\n0\n`; lastSectionCoords.pathXY.forEach(p => { dxf += `0\nVERTEX\n8\n3_SECTION_LINE\n10\n${p.x}\n20\n${p.y}\n30\n0\n`; }); dxf += `0\nSEQEND\n`; } 
-            dxf += `0\nENDSEC\n0\nEOF\n`; return dxf; 
-        }
-        function generateSectionDxfContent(data, gridInterval) { 
-            let dxf = `0\nSECTION\n2\nTABLES\n`;
-            dxf += `0\nTABLE\n2\nSTYLE\n70\n1\n0\nSTYLE\n2\nMSP-GOTHIC\n70\n0\n40\n0.0\n41\n1.0\n50\n0.0\n71\n0\n42\n0.25\n3\nMS Pゴシック\n4\n\n0\nENDTAB\n`;
-            dxf += `0\nTABLE\n2\nLAYER\n70\n5\n`; 
-            const layers = [ {name: 'SECTION_PROFILE', color: 1}, {name: 'SECTION_POINTS', color: 2}, {name: 'SECTION_TEXT', color: 3}, {name: 'GRID_LINES', color: 8}, {name: 'GRID_TEXT', color: 8} ]; 
-            layers.forEach(l => { dxf += `0\nLAYER\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\nCONTINUOUS\n`; }); 
-            dxf += `0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n`; 
-            if (gridInterval > 0 && data.length > 0) { const minX = 0, maxX = Math.max(...data.map(p=>p.x)); const minY = Math.min(...data.map(p=>p.y)), maxY = Math.max(...data.map(p=>p.y)); const startX = 0, endX = Math.ceil(maxX / gridInterval) * gridInterval; const startY = Math.floor(minY / gridInterval) * gridInterval, endY = Math.ceil(maxY / gridInterval) * gridInterval; for (let x = startX; x <= endX; x += gridInterval) { dxf += `0\nLINE\n8\nGRID_LINES\n10\n${x}\n20\n${minY}\n30\n0\n11\n${x}\n21\n${maxY}\n31\n0\n`; dxf += `0\nTEXT\n8\nGRID_TEXT\n7\nMSP-GOTHIC\n10\n${x}\n20\n${minY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`; } for (let y = startY; y <= endY; y += gridInterval) { dxf += `0\nLINE\n8\nGRID_LINES\n10\n${minX}\n20\n${y}\n30\n0\n11\n${maxX}\n21\n${y}\n31\n0\n`; dxf += `0\nTEXT\n8\nGRID_TEXT\n7\nMSP-GOTHIC\n10\n${minX}\n20\n${y}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`; } } 
-            dxf += `0\nPOLYLINE\n8\nSECTION_PROFILE\n66\n1\n70\n0\n`; data.forEach(p => { dxf += `0\nVERTEX\n8\nSECTION_PROFILE\n10\n${p.x.toFixed(4)}\n20\n${p.y.toFixed(4)}\n30\n0\n`; }); dxf += `0\nSEQEND\n`; 
-            data.forEach(p => { dxf += `0\nPOINT\n8\nSECTION_POINTS\n10\n${p.x.toFixed(4)}\n20\n${p.y.toFixed(4)}\n30\n0\n`; dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${p.x.toFixed(4) + 0.1}\n20\n${p.y.toFixed(4) + 0.1}\n30\n0\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`; const coordText = `(Y=${p.originalY.toFixed(3)},X=${p.originalX.toFixed(3)})`; dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${p.x.toFixed(4) + 0.1}\n20\n${p.y.toFixed(4) - 0.3}\n30\n0\n40\n0.15\n1\n${toDxfUnicode(coordText)}\n`; }); 
-            dxf += `0\nENDSEC\n0\nEOF\n`; return dxf; 
+            dxf += `0\nTABLE\n2\nLAYER\n70\n10\n`;
+            
+            const planLayers = [
+                {name: 'PLAN_POINTS', color: 1}, {name: 'PLAN_TEXT', color: 2}, {name: 'PLAN_LINES', color: 3}, 
+                {name: 'PLAN_SECTION_LINE', color: 1, linetype: 'DASHDOT'}, {name: 'PLAN_GRID_LINES', color: 8, linetype: 'DOTTED'}, {name: 'PLAN_GRID_TEXT', color: 8}
+            ];
+            const sectionLayers = [
+                {name: 'SECTION_PROFILE', color: 4}, {name: 'SECTION_POINTS', color: 5}, {name: 'SECTION_TEXT', color: 6},
+                {name: 'SECTION_GRID_LINES', color: 8, linetype: 'DOTTED'}, {name: 'SECTION_GRID_TEXT', color: 8}
+            ];
+            
+            const layers = isCombined ? [...planLayers, ...sectionLayers] : (activePoints.length > 0 ? planLayers : sectionLayers);
+            
+            const uniqueLayers = layers.filter((layer, index, self) => index === self.findIndex((l) => l.name === layer.name));
+            uniqueLayers.forEach(l => {
+                dxf += `0\nLAYER\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\n${l.linetype || 'CONTINUOUS'}\n`;
+            });
+
+            dxf += `0\nENDTAB\n0\nENDSEC\n`;
+            return dxf;
         }
 
-        document.getElementById('downloadCsvBtn').addEventListener('click', () => { 
-            if (activePoints.length === 0) return; 
-            const sys = document.getElementById('coordSystem').value; 
-            const pole = parseFloat(document.getElementById('poleHeight').value); 
-            const params = jprcsParams[sys]; 
-            const coordSysText = document.getElementById('coordSystem').selectedOptions[0].textContent;
-            const poleHeightText = document.getElementById('poleHeight').selectedOptions[0].textContent;
-
-            let csv = "\uFEFF"; 
-            csv += `座標系,${coordSysText}\r\n`;
-            csv += `ポール高補正,${poleHeightText}\r\n\r\n`;
-            csv += "ファイル名,測点名,測定日時,緯度,経度,X座標(m),Y座標(m),アンテナ高(m),補正後標高(m),cmt\r\n"; 
-            const processedPoints = activePoints.map(p => ({ ...p, x: latLonToXY(p.lat, p.lon, params).x, y: latLonToXY(p.lat, p.lon, params).y, correctedEle: p.antennaHeight - pole })); 
-            processedPoints.forEach(p => { const ts = p.time ? new Date(p.time).toLocaleString('ja-JP') : ''; const cmtSanitized = '"' + (p.cmtText || '').replace(/"/g, '""') + '"'; const row = [ p.fileName, p.name, ts, p.lat.toFixed(9), p.lon.toFixed(9), p.x.toFixed(4), p.y.toFixed(4), p.antennaHeight.toFixed(4), p.correctedEle.toFixed(4), cmtSanitized ].join(","); csv += row + "\r\n"; }); 
-            if(lastSectionCoords) { csv += "\r\n断面線情報\r\n項目,緯度,経度,X座標,Y座標\r\n"; lastSectionCoords.path.forEach((p, i) => { csv += `経由点${i+1},${p.lat.toFixed(9)},${p.lon.toFixed(9)},${lastSectionCoords.pathXY[i].y.toFixed(4)},${lastSectionCoords.pathXY[i].x.toFixed(4)}\r\n`; }); } 
-            const link = document.createElement("a"); link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download = `survey_data_edited_系${sys}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); 
-        });
-        document.getElementById('downloadDxfBtn').addEventListener('click', () => { if (activePoints.length === 0) return; const gridInterval = parseFloat(prompt("グリッドの間隔(m)を入力してください。(不要な場合はキャンセル)", "10.0")); const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const params = jprcsParams[sys]; const processedPoints = activePoints.map(p => ({ ...p, x: latLonToXY(p.lat, p.lon, params).x, y: latLonToXY(p.lat, p.lon, params).y, correctedEle: p.antennaHeight - pole })); const dxfContent = generateDxfContent(processedPoints, gridInterval); const blob = new Blob([dxfContent], { type: 'application/dxf' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `survey_data_系${sys}.dxf`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+        function generateDxfEntities(points, gridInterval) {
+            let dxf = '';
+            if (gridInterval > 0 && points.length > 0) {
+                const minX = Math.min(...points.map(p=>p.y)), maxX = Math.max(...points.map(p=>p.y));
+                const minY = Math.min(...points.map(p=>p.x)), maxY = Math.max(...points.map(p=>p.x));
+                const startX = Math.floor(minX / gridInterval) * gridInterval, endX = Math.ceil(maxX / gridInterval) * gridInterval;
+                const startY = Math.floor(minY / gridInterval) * gridInterval, endY = Math.ceil(maxY / gridInterval) * gridInterval;
+                for (let x = startX; x <= endX; x += gridInterval) {
+                    dxf += `0\nLINE\n8\nPLAN_GRID_LINES\n10\n${x}\n20\n${minY}\n30\n0\n11\n${x}\n21\n${maxY}\n31\n0\n`;
+                    dxf += `0\nTEXT\n8\nPLAN_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${x}\n20\n${minY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`;
+                }
+                for (let y = startY; y <= endY; y += gridInterval) {
+                    dxf += `0\nLINE\n8\nPLAN_GRID_LINES\n10\n${minX}\n20\n${y}\n30\n0\n11\n${maxX}\n21\n${y}\n31\n0\n`;
+                    dxf += `0\nTEXT\n8\nPLAN_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${minX}\n20\n${y}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`;
+                }
+            }
+            points.forEach(p => {
+                dxf += `0\nPOINT\n8\nPLAN_POINTS\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`;
+                dxf += `0\nTEXT\n8\nPLAN_TEXT\n7\nMSP-GOTHIC\n10\n${(p.y + 0.1).toFixed(4)}\n20\n${(p.x + 0.1).toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`;
+            });
+            const pointsByFile = {};
+            points.forEach(p => { if (!pointsByFile[p.fileName]) pointsByFile[p.fileName] = []; pointsByFile[p.fileName].push(p); });
+            for(const fileName in pointsByFile) {
+                if(pointsByFile[fileName].length < 2) continue;
+                dxf += `0\nPOLYLINE\n8\nPLAN_LINES\n66\n1\n70\n0\n`;
+                pointsByFile[fileName].forEach(p => { dxf += `0\nVERTEX\n8\nPLAN_LINES\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`; });
+                dxf += `0\nSEQEND\n`;
+            }
+            if(lastSectionCoords && lastSectionCoords.pathXY.length > 1) {
+                dxf += `0\nPOLYLINE\n8\nPLAN_SECTION_LINE\n66\n1\n70\n0\n`;
+                lastSectionCoords.pathXY.forEach(p => { dxf += `0\nVERTEX\n8\nPLAN_SECTION_LINE\n10\n${p.x}\n20\n${p.y}\n30\n0\n`; });
+                dxf += `0\nSEQEND\n`;
+            }
+            return dxf;
+        }
         
-        document.getElementById('downloadSectionCsvBtn').addEventListener('click', () => { 
-            if (currentSectionData.length === 0) return; 
-            let csv = "\uFEFF"; 
-            csv += "測点名,始点からの距離(m),アンテナ高(m),補正後標高(m),X座標(m),Y座標(m)\r\n"; 
-            currentSectionData.forEach(p => { 
-                csv += `${p.name},${p.x.toFixed(4)},${p.antennaHeight.toFixed(4)},${p.y.toFixed(4)},${p.originalX.toFixed(4)},${p.originalY.toFixed(4)}\r\n`; 
-            }); 
-            const link = document.createElement("a"); 
-            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); 
-            link.download = 'section_data.csv'; 
-            document.body.appendChild(link); 
-            link.click(); 
-            document.body.removeChild(link); 
-        });
-        document.getElementById('downloadSectionDxfBtn').addEventListener('click', () => { if (currentSectionData.length === 0) return; const gridInterval = parseFloat(prompt("グリッドの間隔(m)を入力してください。(不要な場合はキャンセル)", "1.0")); const dxfContent = generateSectionDxfContent(currentSectionData, gridInterval); const blob = new Blob([dxfContent], { type: 'application/dxf' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `section_data.dxf`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+        function generateSectionDxfEntities(data, gridInterval, offsetX = 0, offsetY = 0) {
+            let dxf = '';
+            if (gridInterval > 0 && data.length > 0) {
+                const minX = 0, maxX = Math.max(...data.map(p=>p.x));
+                const minY = Math.min(...data.map(p=>p.y)), maxY = Math.max(...data.map(p=>p.y));
+                const startX = 0, endX = Math.ceil(maxX / gridInterval) * gridInterval;
+                const startY = Math.floor(minY / gridInterval) * gridInterval, endY = Math.ceil(maxY / gridInterval) * gridInterval;
+                for (let x = startX; x <= endX; x += gridInterval) {
+                    dxf += `0\nLINE\n8\nSECTION_GRID_LINES\n10\n${x+offsetX}\n20\n${minY+offsetY}\n30\n0\n11\n${x+offsetX}\n21\n${maxY+offsetY}\n31\n0\n`;
+                    dxf += `0\nTEXT\n8\nSECTION_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${x+offsetX}\n20\n${minY+offsetY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`;
+                }
+                for (let y = startY; y <= endY; y += gridInterval) {
+                    dxf += `0\nLINE\n8\nSECTION_GRID_LINES\n10\n${minX+offsetX}\n20\n${y+offsetY}\n30\n0\n11\n${maxX+offsetX}\n21\n${y+offsetY}\n31\n0\n`;
+                    dxf += `0\nTEXT\n8\nSECTION_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${minX+offsetX}\n20\n${y+offsetY}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`;
+                }
+            }
+            dxf += `0\nPOLYLINE\n8\nSECTION_PROFILE\n66\n1\n70\n0\n`;
+            data.forEach(p => { dxf += `0\nVERTEX\n8\nSECTION_PROFILE\n10\n${(p.x + offsetX).toFixed(4)}\n20\n${(p.y + offsetY).toFixed(4)}\n30\n0\n`; });
+            dxf += `0\nSEQEND\n`;
+            data.forEach(p => {
+                dxf += `0\nPOINT\n8\nSECTION_POINTS\n10\n${(p.x + offsetX).toFixed(4)}\n20\n${(p.y + offsetY).toFixed(4)}\n30\n0\n`;
+                dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${(p.x + 0.1 + offsetX).toFixed(4)}\n20\n${(p.y + 0.1 + offsetY).toFixed(4)}\n30\n0\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`;
+                const coordText = `(Y=${p.originalY.toFixed(3)},X=${p.originalX.toFixed(3)})`;
+                dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${(p.x + 0.1 + offsetX).toFixed(4)}\n20\n${(p.y - 0.3 + offsetY).toFixed(4)}\n30\n0\n40\n0.15\n1\n${toDxfUnicode(coordText)}\n`;
+            });
+            return dxf;
+        }
 
-        function saveProject() { if (Object.keys(loadedFiles).length === 0) { alert("保存するデータがありません。"); return; } const projectData = { version: "2.7", savedAt: new Date().toISOString(), loadedFiles: {}, pointOrder: activePoints.map(p => p.id), uiState: { coordSystem: document.getElementById('coordSystem').value, poleHeight: document.getElementById('poleHeight').value, mapView: { center: map.getCenter(), zoom: map.getZoom() }, lastSectionCoords: lastSectionCoords, activeTabId: document.querySelector('.tab-button.active').id } }; for (const fileName in loadedFiles) { const fileData = loadedFiles[fileName]; projectData.loadedFiles[fileName] = { gpxContent: fileData.gpxContent, visible: fileData.visible, color: fileData.color, modifications: {} }; fileData.points.forEach(p => { if (Object.keys(p.modifiedFields).length > 0) { projectData.loadedFiles[fileName].modifications[p.id] = {}; if (p.modifiedFields.name) projectData.loadedFiles[fileName].modifications[p.id].name = p.name; if (p.modifiedFields.antennaHeight) projectData.loadedFiles[fileName].modifications[p.id].antennaHeight = p.antennaHeight; } }); } const jsonString = JSON.stringify(projectData, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `gnss-viewer-project.gsv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
-        function loadProject(file) { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const projectData = JSON.parse(e.target.result); if (!projectData.version || !projectData.loadedFiles) { throw new Error("無効なプロジェクトファイルです。"); } loadedFiles = {}; activePoints = []; lastSectionCoords = null; if (chartInstance) { chartInstance.destroy(); chartInstance = null; } for(const fileName in projectData.loadedFiles) { const fileData = projectData.loadedFiles[fileName]; const points = parseGPX(fileData.gpxContent, fileName); if(fileData.modifications) { points.forEach(p => { if(fileData.modifications[p.id]) { const mod = fileData.modifications[p.id]; if(mod.name) { p.name = mod.name; p.modifiedFields.name = true; } if(mod.antennaHeight !== undefined) { p.antennaHeight = mod.antennaHeight; p.modifiedFields.antennaHeight = true; } } }); } loadedFiles[fileName] = { points: points, visible: fileData.visible, color: fileData.color, gpxContent: fileData.gpxContent }; } const ui = projectData.uiState; document.getElementById('coordSystem').value = ui.coordSystem; document.getElementById('poleHeight').value = ui.poleHeight; map.setView(ui.mapView.center, ui.mapView.zoom); lastSectionCoords = ui.lastSectionCoords; 
-            updateFileListUI(); rerenderUI(); } catch (err) { alert(`プロジェクトファイルの読み込みに失敗しました: ${err.message}`); } finally { document.getElementById('projectInput').value = ''; } }; reader.readAsText(file); }
+function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
+    const sys = document.getElementById('coordSystem').value;
+    const pole = parseFloat(document.getElementById('poleHeight').value);
+    const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
+    if (processedPoints.length === 0) { alert("平面図に出力するデータがありません。"); return ''; }
+
+    // --- ▼ 不要なオフセット計算を削除 ▼ ---
+    /*
+    const planMinX = Math.min(...processedPoints.map(p => p.y)); const planMaxX = Math.max(...processedPoints.map(p => p.y));
+    const planMinY = Math.min(...processedPoints.map(p => p.x)); const planMaxY = Math.max(...processedPoints.map(p => p.x));
+    const planWidth = planMaxX - planMinX; const planHeight = planMaxY - planMinY;
+
+    const sectionMinElev = Math.min(...currentSectionData.map(p => p.y)); const sectionMaxElev = Math.max(...currentSectionData.map(p => p.y));
+    const sectionHeight = sectionMaxElev - sectionMinElev;
+    
+    const margin = Math.max(planWidth, planHeight) * 0.1 || 10;
+    const offsetX = planMinX;
+    const offsetY = planMinY - margin - sectionHeight;
+    */
+    // --- ▲ 不要なオフセット計算を削除 ▲ ---
+
+    let dxf = generateDxfHeaderAndTables(true);
+    dxf += `0\nSECTION\n2\nENTITIES\n`;
+    dxf += generateDxfEntities(processedPoints, gridIntervalPlan);
+    // --- ▼ オフセットに 0 を指定する ▼ ---
+    dxf += generateSectionDxfEntities(currentSectionData, gridIntervalSection, 0, 0); 
+    // --- ▲ オフセットに 0 を指定する ▲ ---
+    dxf += `0\nENDSEC\n0\nEOF\n`;
+    return dxf;
+}
+        
+        document.getElementById('downloadCsvBtn').addEventListener('click', () => { if (activePoints.length === 0) return; const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const coordSysText = document.getElementById('coordSystem').selectedOptions[0].textContent; const poleHeightText = document.getElementById('poleHeight').selectedOptions[0].textContent; let csv = "\uFEFF"; csv += `座標系,${coordSysText}\r\n`; csv += `ポール高補正,${poleHeightText}\r\n\r\n`; csv += "ファイル名,測点名,測定日時,緯度,経度,X座標(m),Y座標(m),アンテナ高(m),補正後標高(m),cmt\r\n"; const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys) , correctedEle: p.antennaHeight - pole })); processedPoints.forEach(p => { const ts = p.time ? new Date(p.time).toLocaleString('ja-JP') : ''; const cmtSanitized = '"' + (p.cmtText || '').replace(/"/g, '""') + '"'; const row = [ p.fileName, p.name, ts, p.lat.toFixed(9), p.lon.toFixed(9), p.x.toFixed(4), p.y.toFixed(4), p.antennaHeight.toFixed(4), p.correctedEle.toFixed(4), cmtSanitized ].join(","); csv += row + "\r\n"; }); if(lastSectionCoords) { csv += "\r\n断面線情報\r\n項目,緯度,経度,X座標,Y座標\r\n"; lastSectionCoords.path.forEach((p, i) => { csv += `経由点${i+1},${p.lat.toFixed(9)},${p.lon.toFixed(9)},${lastSectionCoords.pathXY[i].y.toFixed(4)},${lastSectionCoords.pathXY[i].x.toFixed(4)}\r\n`; }); } const link = document.createElement("a"); link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download = `survey_data_edited_系${sys}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+        document.getElementById('downloadDxfBtn').addEventListener('click', () => { if (activePoints.length === 0) return; const gridInterval = parseFloat(prompt("グリッドの間隔(m)を入力してください。(不要な場合はキャンセル)", "10.0")); const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole })); let dxfContent = generateDxfHeaderAndTables() + `0\nSECTION\n2\nENTITIES\n` + generateDxfEntities(processedPoints, gridInterval) + `0\nENDSEC\n0\nEOF\n`; const blob = new Blob([dxfContent], { type: 'application/dxf' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `survey_data_系${sys}.dxf`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+        document.getElementById('downloadSectionCsvBtn').addEventListener('click', () => { if (currentSectionData.length === 0) return; let csv = "\uFEFF"; csv += "測点名,始点からの距離(m),アンテナ高(m),補正後標高(m),X座標(m),Y座標(m)\r\n"; currentSectionData.forEach(p => { csv += `${p.name},${p.x.toFixed(4)},${p.antennaHeight.toFixed(4)},${p.y.toFixed(4)},${p.originalX.toFixed(4)},${p.originalY.toFixed(4)}\r\n`; }); const link = document.createElement("a"); link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download = 'section_data.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+        
+        document.getElementById('downloadSectionDxfBtn').addEventListener('click', () => {
+            if (currentSectionData.length === 0) return;
+            
+            const exportType = document.querySelector('input[name="dxfExportType"]:checked').value;
+            const gridIntervalSection = parseFloat(prompt("【断面図】グリッドの間隔(m)を入力してください。(不要な場合はキャンセル)", "1.0"));
+            if (isNaN(gridIntervalSection)) return;
+
+            let dxfContent = '';
+            let fileName = 'section_data.dxf';
+
+            if (exportType === 'section_only') {
+                dxfContent = generateDxfHeaderAndTables() + `0\nSECTION\n2\nENTITIES\n` + generateSectionDxfEntities(currentSectionData, gridIntervalSection) + `0\nENDSEC\n0\nEOF\n`;
+            } else { // 'both'
+                const gridIntervalPlan = parseFloat(prompt("【平面図】グリッドの間隔(m)を入力してください。(不要な場合はキャンセル)", "10.0"));
+                if (isNaN(gridIntervalPlan)) return;
+                dxfContent = generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection);
+                fileName = 'plan_and_section_data.dxf';
+            }
+
+            if (dxfContent) {
+                const blob = new Blob([dxfContent], { type: 'application/dxf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+
+        // --- ▼▼▼【修正】プロジェクト保存・読込機能を改善 ▼▼▼ ---
+        function saveProject() {
+            if (Object.keys(loadedFiles).length === 0) {
+                alert("保存するデータがありません。");
+                return;
+            }
+            const projectData = {
+                version: "3.1", // バージョン更新
+                savedAt: new Date().toISOString(),
+                loadedFiles: {},
+                pointOrder: activePoints.map(p => p.id),
+                uiState: {
+                    coordSystem: document.getElementById('coordSystem').value,
+                    poleHeight: document.getElementById('poleHeight').value,
+                    mapView: { center: map.getCenter(), zoom: map.getZoom() },
+                    lastSectionCoords: lastSectionCoords,
+                    activeTabId: document.querySelector('.tab-button.active').id
+                }
+            };
+
+            for (const fileName in loadedFiles) {
+                const fileData = loadedFiles[fileName];
+                const savedFile = {
+                    gpxContent: fileData.gpxContent,
+                    visible: fileData.visible,
+                    color: fileData.color,
+                    modifications: {},
+                    // 【追加】 gpxContentがない場合、ポイントデータを直接保存
+                    pointsData: fileData.gpxContent === null ? fileData.points.map(p => ({
+                        id: p.id, name: p.name, lat: p.lat, lon: p.lon, antennaHeight: p.antennaHeight, time: p.time, cmtText: p.cmtText,
+                        pointGeoidHeight: p.pointGeoidHeight, ellipsoidHeight: p.ellipsoidHeight, eleDiff: p.eleDiff
+                    })) : null
+                };
+
+                fileData.points.forEach(p => {
+                    if (Object.keys(p.modifiedFields).length > 0) {
+                        savedFile.modifications[p.id] = {};
+                        if (p.modifiedFields.name) savedFile.modifications[p.id].name = p.name;
+                        if (p.modifiedFields.antennaHeight) savedFile.modifications[p.id].antennaHeight = p.antennaHeight;
+                    }
+                });
+                projectData.loadedFiles[fileName] = savedFile;
+            }
+
+            const jsonString = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `gnss-viewer-project.gsv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function loadProject(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const projectData = JSON.parse(e.target.result);
+                    if (!projectData.version || !projectData.loadedFiles) {
+                        throw new Error("無効なプロジェクトファイルです。");
+                    }
+                    loadedFiles = {};
+                    activePoints = [];
+                    lastSectionCoords = null;
+                    if (chartInstance) {
+                        chartInstance.destroy();
+                        chartInstance = null;
+                    }
+
+                    for (const fileName in projectData.loadedFiles) {
+                        const fileData = projectData.loadedFiles[fileName];
+                        let points = [];
+
+                        // 【修正】 gpxContent または pointsData からデータを復元
+                        if (fileData.gpxContent) {
+                            points = parseGPX(fileData.gpxContent, fileName);
+                        } else if (fileData.pointsData) {
+                            points = fileData.pointsData.map(p => ({ ...p, fileName: fileName, modifiedFields: {} }));
+                        } else {
+                            console.warn(`プロジェクト内の ${fileName} には表示できるデータがありませんでした。スキップします。`);
+                            continue;
+                        }
+
+                        if (fileData.modifications) {
+                            points.forEach(p => {
+                                if (fileData.modifications[p.id]) {
+                                    const mod = fileData.modifications[p.id];
+                                    if (mod.name) {
+                                        p.name = mod.name;
+                                        p.modifiedFields.name = true;
+                                    }
+                                    if (mod.antennaHeight !== undefined) {
+                                        p.antennaHeight = mod.antennaHeight;
+                                        p.modifiedFields.antennaHeight = true;
+                                    }
+                                }
+                            });
+                        }
+                        loadedFiles[fileName] = { points: points, visible: fileData.visible, color: fileData.color, gpxContent: fileData.gpxContent };
+                    }
+
+                    const ui = projectData.uiState;
+                    document.getElementById('coordSystem').value = ui.coordSystem;
+                    document.getElementById('poleHeight').value = ui.poleHeight;
+                    map.setView(ui.mapView.center, ui.mapView.zoom);
+                    lastSectionCoords = ui.lastSectionCoords;
+                    
+                    updateFileListUI();
+                    // 【修正】 rerenderUIではなくupdateUIを呼び出して、activePointsを正しく再構築する
+                    updateUI();
+
+                } catch (err) {
+                    alert(`プロジェクトファイルの読み込みに失敗しました: ${err.message}`);
+                } finally {
+                    document.getElementById('projectInput').value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+        // --- ▲▲▲【修正】プロジェクト保存・読込機能を改善 ▲▲▲ ---
 
         function initialize() {
+            coordinateSystems.forEach(sys => { const projDef = `+proj=tmerc +lat_0=${sys.lat0} +lon_0=${sys.lon0} +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs`; proj4.defs(`EPSG:${sys.epsg}`, projDef); });
             for (let i = 1; i <= 19; i++) { const opt = document.createElement('option'); opt.value = i; opt.textContent = `第${i}系`; if (i === 9) opt.selected = true; document.getElementById('coordSystem').appendChild(opt); }
             initMap();
             document.getElementById('fileInput').addEventListener('change', (e) => processFiles(e.target.files));
+            document.getElementById('csvInput').addEventListener('change', (e) => processFiles(e.target.files));
             document.getElementById('coordSystem').addEventListener('change', () => rerenderUI());
             document.getElementById('poleHeight').addEventListener('change', () => rerenderUI());
             document.getElementById('toggleLineOnPlot').addEventListener('change', () => rerenderUI());
             document.getElementById('aspectRatioToggle').addEventListener('change', () => { if (chartInstance) chartInstance.update(); });
-            
             const tableContainer = document.getElementById('tableContainer');
             tableContainer.addEventListener('click', (e) => { const targetRow = e.target.closest('tr'); if (!targetRow) return; if (targetRow.classList.contains('highlighted') && e.target.closest('.editable-cell')) return; focusOnPoint(e, targetRow.dataset.id); });
             tableContainer.addEventListener('dblclick', handleTableCellEdit);
-            
-            const mobileTabs = document.querySelector('.mobile-only-tabs');
-            const desktopTabs = document.querySelector('.right-panel .tab-bar');
-            const leftPanel = document.querySelector('.left-panel');
-            const rightPanel = document.querySelector('.right-panel');
-
-            mobileTabs.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('tab-button')) return;
-                
-                mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-
-                const targetId = e.target.id;
-                if (targetId === 'tab-data-mobile') {
-                    leftPanel.classList.remove('hidden-on-mobile');
-                    rightPanel.classList.add('hidden-on-mobile');
-                } else {
-                    leftPanel.classList.add('hidden-on-mobile');
-                    rightPanel.classList.remove('hidden-on-mobile');
-                    
-                    if (targetId === 'tab-map-mobile') {
-                        document.getElementById('tab-map').click();
-                    } else if (targetId === 'tab-plot-mobile') {
-                        document.getElementById('tab-plot').click();
-                    }
-                }
-            });
-
-            desktopTabs.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('tab-button')) return;
-
-                desktopTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('#pane-map, #pane-plot').forEach(pane => pane.classList.remove('active'));
-
-                e.target.classList.add('active');
-                const paneId = e.target.id.replace('tab-', 'pane-');
-                document.getElementById(paneId).classList.add('active');
-                
-                if (paneId === 'pane-map') {
-                    setTimeout(() => map.invalidateSize(), 10);
-                } else if (paneId === 'pane-plot' && chartInstance) {
-                    setTimeout(() => chartInstance.resize(), 10);
-                }
-            });
-            
+            const mobileTabs = document.querySelector('.mobile-only-tabs'); const desktopTabs = document.querySelector('.right-panel .tab-bar'); const leftPanel = document.querySelector('.left-panel'); const rightPanel = document.querySelector('.right-panel');
+            mobileTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); e.target.classList.add('active'); const targetId = e.target.id; if (targetId === 'tab-data-mobile') { leftPanel.classList.remove('hidden-on-mobile'); rightPanel.classList.add('hidden-on-mobile'); } else { leftPanel.classList.add('hidden-on-mobile'); rightPanel.classList.remove('hidden-on-mobile'); if (targetId === 'tab-map-mobile') { document.getElementById('tab-map').click(); } else if (targetId === 'tab-plot-mobile') { document.getElementById('tab-plot').click(); } } });
+            desktopTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; desktopTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); document.querySelectorAll('#pane-map, #pane-plot').forEach(pane => pane.classList.remove('active')); e.target.classList.add('active'); const paneId = e.target.id.replace('tab-', 'pane-'); document.getElementById(paneId).classList.add('active'); if (paneId === 'pane-map') { setTimeout(() => map.invalidateSize(), 10); } else if (paneId === 'pane-plot' && chartInstance) { setTimeout(() => chartInstance.resize(), 10); } });
             const body = document.body; body.addEventListener('dragover', (e) => { e.preventDefault(); body.classList.add('drag-over'); }); body.addEventListener('dragleave', () => body.classList.remove('drag-over')); body.addEventListener('drop', (e) => { e.preventDefault(); body.classList.remove('drag-over'); processFiles(e.dataTransfer.files); });
-            
             document.getElementById('section-line-btn').addEventListener('click', toggleSectionLineMode);
             document.getElementById('create-section-profile-btn').addEventListener('click', generateAndShowSectionProfile);
             document.getElementById('sectionAspectRatioToggle').addEventListener('change', () => { if (sectionChartInstance) sectionChartInstance.update(); });
-
-            // ▼▼▼【変更】ここからイベントリスナーの修正 ▼▼▼
             const plotCanvas = document.getElementById('xyPlot');
-            // 古いイベントリスナーを削除またはコメントアウト
-            // plotCanvas.addEventListener('mousedown', handlePlotMouseDown);
-            // plotCanvas.addEventListener('mousemove', handlePlotMouseMove);
-            // plotCanvas.addEventListener('mouseup', handlePlotMouseUp);
-
-            // マウスイベント用の新しいリスナー
-            plotCanvas.addEventListener('mousedown', handlePlotDrawStart);
-            plotCanvas.addEventListener('mousemove', handlePlotDrawMove);
-            plotCanvas.addEventListener('mouseup', handlePlotDrawEnd);
-
-            // タッチイベント用の新しいリスナーを追加
-            // { passive: false } は、イベント内で preventDefault() を呼び出すために必要
-            plotCanvas.addEventListener('touchstart', handlePlotDrawStart, { passive: false });
-            plotCanvas.addEventListener('touchmove', handlePlotDrawMove, { passive: false });
-            plotCanvas.addEventListener('touchend', handlePlotDrawEnd);
-            // ▲▲▲【変更】ここまでイベントリスナーの修正 ▲▲▲
-
-            const modal = document.getElementById('section-modal');
-            modal.addEventListener('click', (e) => { if (e.target === modal || e.target.classList.contains('modal-close')) modal.style.display = 'none'; });
+            plotCanvas.addEventListener('mousedown', handlePlotDrawStart); plotCanvas.addEventListener('mousemove', handlePlotDrawMove); plotCanvas.addEventListener('mouseup', handlePlotDrawEnd);
+            plotCanvas.addEventListener('touchstart', handlePlotDrawStart, { passive: false }); plotCanvas.addEventListener('touchmove', handlePlotDrawMove, { passive: false }); plotCanvas.addEventListener('touchend', handlePlotDrawEnd);
+            const sectionModal = document.getElementById('section-modal');
+            sectionModal.addEventListener('click', (e) => { if (e.target === sectionModal || e.target.classList.contains('modal-close')) sectionModal.style.display = 'none'; });
             window.addEventListener('resize', () => { setTimeout(() => { if(map) map.invalidateSize(); if(chartInstance) chartInstance.resize(); if(sectionChartInstance) sectionChartInstance.resize(); }, 100); });
-        
-            document.getElementById('saveProjectBtn').addEventListener('click', saveProject);
+            
+            document.getElementById('projectSaveBtnHeader').addEventListener('click', saveProject);
+            document.getElementById('projectLoadBtnHeader').addEventListener('click', () => document.getElementById('projectInput').click());
+            
             document.getElementById('projectInput').addEventListener('change', (e) => loadProject(e.target.files[0]));
+            document.getElementById('legal-toggle').addEventListener('click', () => { const details = document.getElementById('legal-details'); const toggle = document.getElementById('legal-toggle'); const isHidden = details.style.display === 'none'; details.style.display = isHidden ? 'block' : 'none'; toggle.textContent = isHidden ? '免責事項 (クリックで非表示)' : '免責事項 (クリックで表示)'; });
+            const coordModal = document.getElementById('coord-modal');
+            document.getElementById('coord-modal-ok').addEventListener('click', () => {
+                const selectedSystemId = document.getElementById('modal-coord-system').value;
+                try {
+                    const points = processCsvPoints(tempCsvContent, tempCsvFileName, selectedSystemId);
+                    if(points.length === 0) { alert(`データ「${tempCsvFileName}」から有効な測点を読み込めませんでした。`); } else {
+                        const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6'];
+                        loadedFiles[tempCsvFileName] = { points, visible: true, color: colors[Object.keys(loadedFiles).length % colors.length], gpxContent: null };
+                        updateFileListUI(); updateUI();
+                    }
+                } catch (err) { alert(`データ解析エラー (${tempCsvFileName}): ${err.message}`); } finally { coordModal.style.display = 'none'; tempCsvContent = null; tempCsvFileName = null; }
+            });
+            document.getElementById('coord-modal-cancel').addEventListener('click', () => { coordModal.style.display = 'none'; tempCsvContent = null; tempCsvFileName = null; });
+            const textImportModal = document.getElementById('text-import-modal');
+            document.getElementById('textImportBtn').addEventListener('click', () => { textImportModal.style.display = 'flex'; document.getElementById('text-import-textarea').value = ''; });
+            textImportModal.querySelector('.modal-close').addEventListener('click', () => textImportModal.style.display = 'none');
+            document.getElementById('text-import-cancel').addEventListener('click', () => textImportModal.style.display = 'none');
+            document.getElementById('text-import-ok').addEventListener('click', () => {
+                const textContent = document.getElementById('text-import-textarea').value;
+                if (textContent.trim() === '') { alert('テキストが入力されていません。'); return; }
+                const fileName = `Pasted_Data_${textImportCounter++}`;
+                try {
+                    const points = parseCSV(textContent, fileName);
+                    if (points === null) { /* 座標系モーダルが表示される */ }
+                    else if(points.length === 0) { alert(`貼り付けられたテキストから有効な測点を読み込めませんでした。`); }
+                    else {
+                        const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6'];
+                        loadedFiles[fileName] = { points, visible: true, color: colors[Object.keys(loadedFiles).length % colors.length], gpxContent: null };
+                        updateFileListUI(); updateUI();
+                    }
+                } catch (err) { alert(`テキスト解析エラー: ${err.message}`); }
+                textImportModal.style.display = 'none';
+            });
+            document.querySelectorAll('#section-type-switch-container input[name="sectionType"]').forEach(radio => {
+                radio.addEventListener('change', (e) => updateSectionPlot(e.target.value));
+            });
+
+            const today = new Date();
+            document.getElementById('lastUpdated').textContent = `最終更新日: ${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+
+            const helpBtn = document.getElementById('helpBtn');
+            const helpModal = document.getElementById('help-modal');
+            helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal || e.target.classList.contains('modal-close')) {
+                    helpModal.style.display = 'none';
+                }
+            });
         }
         
         initialize();
     </script>
 </body>
-</html>
+</html>```
