@@ -859,7 +859,17 @@
                                 pan: { enabled: true, mode: 'xy' }
                             }
                         },
-                        onClick: (evt) => { if (xzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { xzChartInstance.resetZoom(); return; } const elems = xzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true); if (elems.length > 0) { const elem = elems[0]; const ds = xzChartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } },
+                        onClick: (evt) => {
+                            if (isSectionMode) return;
+                            if (xzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { xzChartInstance.resetZoom(); return; }
+                            const elems = xzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                            if (elems.length > 0) {
+                                const elem = elems[0];
+                                const ds = xzChartInstance.data.datasets[elem.datasetIndex];
+                                const ptIdx = ds.originalIndices[elem.index];
+                                focusOnPoint(null, activePoints[ptIdx].id);
+                            }
+                        },
                     }
                 });
             }
@@ -928,7 +938,17 @@
                                 pan: { enabled: true, mode: 'xy' }
                             }
                         },
-                        onClick: (evt) => { if (yzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { yzChartInstance.resetZoom(); return; } const elems = yzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true); if (elems.length > 0) { const elem = elems[0]; const ds = yzChartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } },
+                        onClick: (evt) => {
+                            if (isSectionMode) return;
+                            if (yzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { yzChartInstance.resetZoom(); return; }
+                            const elems = yzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                            if (elems.length > 0) {
+                                const elem = elems[0];
+                                const ds = yzChartInstance.data.datasets[elem.datasetIndex];
+                                const ptIdx = ds.originalIndices[elem.index];
+                                focusOnPoint(null, activePoints[ptIdx].id);
+                            }
+                        },
                     }
                 });
             }
