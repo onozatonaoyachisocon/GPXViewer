@@ -397,7 +397,6 @@ function parseCSVLine(line) {
         function xyToLatLon(x, y, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [lon, lat] = proj4(`EPSG:${system.epsg}`, 'EPSG:4326', [y, x]); return { lat, lon }; }
         function initMap() { const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '© GSI' }); map = L.map('map', { layers: [gsiStd] }).setView([36.2, 139.0], 5); L.control.layers({ "地理院地図": gsiStd, "写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg', { attribution: '© GSI' }) }).addTo(map); L.control.scale({ imperial: false }).addTo(map); polylineLayer = L.layerGroup().addTo(map); }
         
-        // ▼▼▼【修正】GPX解析関数を更新 ▼▼▼
         function parseGPX(xmlText, fileName) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
@@ -415,8 +414,8 @@ function parseCSVLine(line) {
                     time: getTagText(wpt, 'time') || '',
                     cmtText: getTagText(wpt, 'cmt') || '',
                     pointGeoidHeight: parseFloat(getTagText(wpt, 'geoidheight') || 0),
-                    geoidSystem: '', // 新規追加
-                    fixMode: '',     // 新規追加
+                    geoidSystem: '',
+                    fixMode: '',
                     ellipsoidHeight: null,
                     eleDiff: null,
                     fileName: fileName,
@@ -443,7 +442,6 @@ function parseCSVLine(line) {
             }
             return points;
         }
-        // ▲▲▲【修正】GPX解析関数を更新 ▲▲▲
 
         function processCsvPoints(csvText, fileName, coordSystemId) {
             const lines = csvText.trim().split(/\r?\n/);
@@ -580,8 +578,92 @@ function parseCSV(csvText, fileName) {
         }
 
         Chart.register(window.ChartZoom);
-        const xyPlotAspectRatioPlugin = { id: 'xyPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('aspectRatioToggle').checked || (chart.isZoomedOrPanned && chart.isZoomedOrPanned())) { return; } const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
         
+        // ▼▼▼【修正】アスペクト比維持プラグインのロジックを更新 ▼▼▼
+        const xyPlotAspectRatioPlugin = {
+            id: 'xyPlotAspectRatio',
+            afterDataLimits: (chart) => {
+                // ズーム/パン操作中でも1:1を維持するように、isZoomedOrPannedのチェックを削除
+                if (!document.getElementById('aspectRatioToggle').checked) {
+                    return;
+                }
+                const { x, y } = chart.scales;
+                if (!x.width || !y.height) return;
+                const xRange = x.max - x.min;
+                const yRange = y.max - y.min;
+                if (xRange <= 0 || yRange <= 0) return;
+                const xPixelPerUnit = x.width / xRange;
+                const yPixelPerUnit = y.height / yRange;
+                if (xPixelPerUnit > yPixelPerUnit) {
+                    const newRange = x.width / yPixelPerUnit;
+                    const diff = newRange - xRange;
+                    x.min -= diff / 2;
+                    x.max += diff / 2;
+                } else {
+                    const newRange = y.height / xPixelPerUnit;
+                    const diff = newRange - yRange;
+                    y.min -= diff / 2;
+                    y.max += diff / 2;
+                }
+            }
+        };
+        // ▲▲▲【修正】アスペクト比維持プラグインのロジックを更新 ▲▲▲
+        
+        const scaleBarPlugin = {
+            id: 'scaleBar',
+            afterDraw: (chart) => {
+                const ctx = chart.ctx;
+                const xAxis = chart.scales.x;
+                const chartArea = chart.chartArea;
+
+                if (!xAxis || xAxis.min === undefined || xAxis.max === undefined || !chartArea) return;
+
+                const maxPixelWidth = 100;
+                const viewableRange = xAxis.max - xAxis.min;
+                const maxRealWorldDistance = viewableRange * (maxPixelWidth / xAxis.width);
+
+                if (maxRealWorldDistance <= 0) return;
+
+                const magnitude = Math.pow(10, Math.floor(Math.log10(maxRealWorldDistance)));
+                const possibleSteps = [magnitude, magnitude / 2, magnitude / 5, magnitude / 10, magnitude / 20, magnitude / 50, magnitude/100];
+                const niceDistance = possibleSteps.find(step => (step / viewableRange) * xAxis.width > 20) || possibleSteps[possibleSteps.length - 1];
+
+                const scalePixelWidth = (niceDistance / viewableRange) * xAxis.width;
+
+                const xPos = chartArea.left + 20;
+                const yPos = chartArea.bottom - 20;
+
+                let label;
+                if (niceDistance >= 1) {
+                    label = `${niceDistance.toFixed(0)} m`;
+                } else if (niceDistance >= 0.01) {
+                    label = `${(niceDistance * 100).toFixed(0)} cm`;
+                } else {
+                    label = `${(niceDistance * 1000).toFixed(0)} mm`;
+                }
+                
+                ctx.save();
+                ctx.strokeStyle = '#333';
+                ctx.fillStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.font = '12px "Segoe UI", Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+
+                ctx.beginPath();
+                ctx.moveTo(xPos, yPos);
+                ctx.lineTo(xPos + scalePixelWidth, yPos);
+                ctx.moveTo(xPos, yPos - 5);
+                ctx.lineTo(xPos, yPos + 5);
+                ctx.moveTo(xPos + scalePixelWidth, yPos - 5);
+                ctx.lineTo(xPos + scalePixelWidth, yPos + 5);
+                ctx.stroke();
+
+                ctx.fillText(label, xPos + scalePixelWidth / 2, yPos - 8);
+                ctx.restore();
+            }
+        };
+
         function displayXYPlot(points, highlightPointId) {
             const ctx = document.getElementById('xyPlot');
             if (points.length === 0) { if (chartInstance) { chartInstance.destroy(); chartInstance = null; } return; }
@@ -598,7 +680,8 @@ function parseCSV(csvText, fileName) {
             if (chartInstance) { chartInstance.data.datasets = finalDatasets; chartInstance.options.plugins.annotation.annotations = annotations; chartInstance.update();
             } else {
                 chartInstance = new Chart(ctx, {
-                    data: { datasets: finalDatasets }, plugins: [xyPlotAspectRatioPlugin],
+                    data: { datasets: finalDatasets }, 
+                    plugins: [xyPlotAspectRatioPlugin, scaleBarPlugin],
                     options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: 'X座標 (m)' } } }, plugins: { annotation: { annotations }, tooltip: { filter: (item) => item.dataset.type === 'scatter', callbacks: { label: ctx => `${activePoints[Object.values(datasets)[ctx.datasetIndex].originalIndices[ctx.dataIndex]].name}: (Y=${ctx.parsed.x.toFixed(3)}, X=${ctx.parsed.y.toFixed(3)})` } }, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } } },
                         onClick: (evt) => { if (chartInstance.isZoomedOrPanned() && evt.native.detail === 2) { chartInstance.resetZoom(); return; } handlePlotClick(evt); },
                     }
@@ -846,7 +929,6 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
     return dxf;
 }
         
-        // ▼▼▼【修正】CSVダウンロード処理を更新 ▼▼▼
         document.getElementById('downloadCsvBtn').addEventListener('click', () => {
             if (activePoints.length === 0) return;
             const sys = document.getElementById('coordSystem').value;
@@ -888,7 +970,6 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
             link.click();
             document.body.removeChild(link);
         });
-        // ▲▲▲【修正】CSVダウンロード処理を更新 ▲▲▲
         
         document.getElementById('downloadDxfBtn').addEventListener('click', () => { if (activePoints.length === 0) return; const gridInterval = parseFloat(prompt("グリッドの間隔(m)を入力してください。(不要な場合はキャンセル)", "10.0")); const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole })); let dxfContent = generateDxfHeaderAndTables() + `0\nSECTION\n2\nENTITIES\n` + generateDxfEntities(processedPoints, gridInterval) + `0\nENDSEC\n0\nEOF\n`; const blob = new Blob([dxfContent], { type: 'application/dxf' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `survey_data_系${sys}.dxf`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
         document.getElementById('downloadSectionCsvBtn').addEventListener('click', () => { if (currentSectionData.length === 0) return; let csv = "\uFEFF"; csv += "測点名,始点からの距離(m),アンテナ高(m),補正後標高(m),X座標(m),Y座標(m)\r\n"; currentSectionData.forEach(p => { csv += `${p.name},${p.x.toFixed(4)},${p.antennaHeight.toFixed(4)},${p.y.toFixed(4)},${p.originalX.toFixed(4)},${p.originalY.toFixed(4)}\r\n`; }); const link = document.createElement("a"); link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download = 'section_data.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
