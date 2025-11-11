@@ -23,22 +23,22 @@
         .left-panel { width: 60%; display: flex; flex-direction: column; background: #ecf0f1; border-right: 2px solid #bdc3c7; }
         .right-panel { width: 40%; display: flex; flex-direction: column; }
         
-        .tab-bar { flex-shrink: 0; display: flex; background-color: #ecf0f1; border-bottom: 2px solid #bdc3c7; }
+        .tab-bar { flex-shrink: 0; display: flex; background-color: #ecf0f1; border-bottom: 2px solid #bdc3c7; flex-wrap: wrap;}
         .tab-button { padding: 0 15px; height: var(--tab-height); border: none; background: #ecf0f1; cursor: pointer; font-size: 0.9em; color: #7f8c8d; border-bottom: 3px solid transparent; }
         .tab-button.active { background: #fff; color: #2c3e50; font-weight: bold; border-bottom: 3px solid #3498db; }
         .tab-content { flex-grow: 1; position: relative; background: #fff;}
         .tab-pane { width: 100%; height: 100%; position: absolute; visibility: hidden; opacity: 0; transition: opacity 0.2s; }
         .tab-pane.active { visibility: visible; opacity: 1; }
         #map { width: 100%; height: 100%; }
-        #plot-container-wrapper { display: flex; flex-direction: column; height: 100%; }
-        #plot-controls { padding: 8px; background: #f8f9fa; border-bottom: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.85em; }
-        #plot-controls label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
-        #plot-controls select, #plot-controls input[type="number"] { padding: 4px; border-radius: 4px; border: 1px solid #bdc3c7; background: #fff; }
-        #plot-controls button { padding: 4px 8px; border-radius: 4px; border: 1px solid #bdc3c7; background: #fff; cursor: pointer; }
-        #plot-controls button:disabled { background-color: #e0e0e0; cursor: not-allowed; }
-        #plot-controls button.active { background: #3498db; color: white; border-color: #2980b9; }
+        .plot-container-wrapper { display: flex; flex-direction: column; height: 100%; }
+        .plot-controls { padding: 8px; background: #f8f9fa; border-bottom: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.85em; }
+        .plot-controls label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .plot-controls select, .plot-controls input[type="number"] { padding: 4px; border-radius: 4px; border: 1px solid #bdc3c7; background: #fff; }
+        .plot-controls button { padding: 4px 8px; border-radius: 4px; border: 1px solid #bdc3c7; background: #fff; cursor: pointer; }
+        .plot-controls button:disabled { background-color: #e0e0e0; cursor: not-allowed; }
+        .plot-controls button.active { background: #3498db; color: white; border-color: #2980b9; }
         #section-controls-group { display: flex; gap: 8px; align-items: center; }
-        #plot-canvas-container { flex-grow: 1; position: relative; padding: 10px; }
+        .plot-canvas-container { flex-grow: 1; position: relative; padding: 10px; }
         #xyPlot.crosshair { cursor: crosshair; }
         #xyPlot.editable-section { cursor: pointer; }
 
@@ -83,7 +83,7 @@
         .drop-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.7); color: white; display: none; justify-content: center; align-items: center; font-size: 2em; text-align: center; z-index: 10000; pointer-events: none; }
         body.drag-over .drop-overlay { display: flex; }
         
-        .mobile-only-tabs { display: none; flex-shrink: 0; }
+        .mobile-only-tabs { display: none; flex-shrink: 0; flex-wrap: wrap; }
         
         #help-modal .modal-body { padding: 0 15px; font-size: 0.9em; line-height: 1.6; }
         #help-modal h4 { margin-top: 20px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0; font-size: 1.1em; color: #2c3e50; }
@@ -101,7 +101,7 @@
         #legal-details p { margin-bottom: 5px; }
 
         @media (max-width: 768px) {
-            .mobile-only-tabs { display: flex; height: var(--tab-height); }
+            .mobile-only-tabs { display: flex; height: auto; }
             .mobile-only-tabs .tab-button { flex-grow: 1; text-align: center; }
             .main-container { flex-direction: column; }
             .left-panel, .right-panel { width: 100%; border-right: none; flex: 1; min-height: 0; }
@@ -133,7 +133,9 @@
     <div class="tab-bar mobile-only-tabs">
         <button id="tab-data-mobile" class="tab-button active">📊 データ</button>
         <button id="tab-map-mobile" class="tab-button">🗺️ 地図</button>
-        <button id="tab-plot-mobile" class="tab-button">📈 XYプロット</button>
+        <button id="tab-plot-mobile" class="tab-button">📈 XY</button>
+        <button id="tab-xz-plot-mobile" class="tab-button">📉 XZ</button>
+        <button id="tab-yz-plot-mobile" class="tab-button">📉 YZ</button>
     </div>
 
     <div class="main-container">
@@ -175,12 +177,14 @@
             <div class="tab-bar">
                 <button id="tab-map" class="tab-button active">🗺️ 地図</button>
                 <button id="tab-plot" class="tab-button">📈 XYプロット</button>
+                <button id="tab-xz-plot" class="tab-button">📉 XZプロット</button>
+                <button id="tab-yz-plot" class="tab-button">📉 YZプロット</button>
             </div>
             <div class="tab-content">
                 <div id="pane-map" class="tab-pane active"><div id="map"></div></div>
                 <div id="pane-plot" class="tab-pane">
-                    <div id="plot-container-wrapper">
-                        <div id="plot-controls">
+                    <div class="plot-container-wrapper">
+                        <div class="plot-controls">
                             <label><input type="checkbox" id="aspectRatioToggle"> スケール 1:1</label>
                             <div id="section-controls-group">
                                 <select id="section-mode-select" title="断面線の作成方法を選択">
@@ -195,7 +199,25 @@
                             <span id="section-status" style="display:none; color:#555; flex-grow: 1;"></span>
                             <label style="margin-left: auto;"><input type="checkbox" id="toggleLineOnPlot" checked> 接続ライン</label>
                         </div>
-                        <div id="plot-canvas-container"><canvas id="xyPlot"></canvas></div>
+                        <div class="plot-canvas-container"><canvas id="xyPlot"></canvas></div>
+                    </div>
+                </div>
+                <div id="pane-xz-plot" class="tab-pane">
+                    <div class="plot-container-wrapper">
+                        <div class="plot-controls">
+                            <label><input type="checkbox" id="xzAspectRatioToggle"> スケール 1:1</label>
+                            <label style="margin-left: auto;"><input type="checkbox" id="toggleLineOnXzPlot" checked> 接続ライン</label>
+                        </div>
+                        <div class="plot-canvas-container"><canvas id="xzPlot"></canvas></div>
+                    </div>
+                </div>
+                <div id="pane-yz-plot" class="tab-pane">
+                    <div class="plot-container-wrapper">
+                        <div class="plot-controls">
+                            <label><input type="checkbox" id="yzAspectRatioToggle"> スケール 1:1</label>
+                            <label style="margin-left: auto;"><input type="checkbox" id="toggleLineOnYzPlot" checked> 接続ライン</label>
+                        </div>
+                        <div class="plot-canvas-container"><canvas id="yzPlot"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -289,12 +311,12 @@
                     </li>
                     <li>
                         <strong>データの確認と操作</strong><br>
-                        データは左の「データパネル」と右の「地図」「XYプロット」に表示されます。
+                        データは左の「データパネル」と右の「地図」「XYプロット」などに表示されます。
                         <ul>
                             <li><b>データパネル</b>: ファイルごとの表示/非表示の切り替えや削除ができます。</li>
                             <li><b>テーブル</b>: 測点の一覧です。行のドラッグで並べ替え、測点名やアンテナ高のセルをダブルクリックすると値を直接編集できます。</li>
                             <li><b>地図</b>: 地理院地図上に測点の位置がプロットされます。マーカーをクリックすると詳細情報を確認できます。</li>
-                            <li><b>XYプロット</b>: 平面直角座標系での位置関係を確認できます。マウスホイールでズーム、ドラッグでパン（移動）ができます。</li>
+                            <li><b>XY/XZ/YZプロット</b>: 各平面での位置関係を確認できます。マウスホイールでズーム、ドラッグでパン（移動）ができます。</li>
                         </ul>
                     </li>
                     <li>
@@ -346,7 +368,7 @@
 
     <script>
         // --- (JavaScript) ---
-        let map, polylineLayer, sortableInstance, chartInstance, sectionChartInstance, mapSectionLine;
+        let map, polylineLayer, sortableInstance, chartInstance, xzChartInstance, yzChartInstance, sectionChartInstance, mapSectionLine;
         let loadedFiles = {}, activePoints = [], currentSectionData = {}, lastSectionCoords = null, lastDefinedSectionLinePoints = null;
         let isSectionMode = false, isSectionLineDefined = false, sectionLineStart = null;
         let pointsInLastSectionIds = [];
@@ -354,6 +376,9 @@
         let tempCsvContent = null;
         let tempCsvFileName = null;
         let textImportCounter = 1;
+        let wasXyAspectRatioChecked = false;
+        let wasXzAspectRatioChecked = false;
+        let wasYzAspectRatioChecked = false;
         
         const coordinateSystems = [
           {num:1, lat0:33, lon0:129.5, epsg:6669}, {num:2, lat0:33, lon0:131, epsg:6670},
@@ -368,7 +393,7 @@
           {num:19, lat0:26, lon0:154, epsg:6687}
         ];
         
-function parseCSVLine(line) {
+        function parseCSVLine(line) {
             const result = [];
             let current = '';
             let inQuotes = false;
@@ -491,34 +516,34 @@ function parseCSVLine(line) {
             modal.style.display = 'flex';
         }
 
-function parseCSV(csvText, fileName) {
-    const lines = csvText.trim().split(/\r?\n/);
-    if (lines.length === 0 || (lines.length === 1 && lines[0].trim() === '')) throw new Error("データが空です。");
+        function parseCSV(csvText, fileName) {
+            const lines = csvText.trim().split(/\r?\n/);
+            if (lines.length === 0 || (lines.length === 1 && lines[0].trim() === '')) throw new Error("データが空です。");
 
-    const headerLineTest = lines[0].toLowerCase();
-    const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point');
-    const lineToCheck = hasHeader ? lines[1] : lines[0];
+            const headerLineTest = lines[0].toLowerCase();
+            const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point');
+            const lineToCheck = hasHeader ? lines[1] : lines[0];
 
-    if (!lineToCheck) {
-        throw new Error("データ行が見つかりません。");
-    }
-    
-    const valuesToCheck = parseCSVLine(lineToCheck);
-    if (valuesToCheck.length < 3) throw new Error("データは少なくとも3列（測点名, X/緯度, Y/経度）必要です。");
-    
-    const val1 = parseFloat(valuesToCheck[1]);
-    const val2 = parseFloat(valuesToCheck[2]);
-    
-    const isLatLon = !isNaN(val1) && !isNaN(val2) && Math.abs(val1) <= 90 && Math.abs(val2) <= 180;
-    
-    if (isLatLon) {
-        const coordSystemId = document.getElementById('coordSystem').value;
-        return processCsvPoints(csvText, fileName, coordSystemId);
-    } else {
-        showCoordSystemModal(csvText, fileName);
-        return null;
-    }
-}
+            if (!lineToCheck) {
+                throw new Error("データ行が見つかりません。");
+            }
+            
+            const valuesToCheck = parseCSVLine(lineToCheck);
+            if (valuesToCheck.length < 3) throw new Error("データは少なくとも3列（測点名, X/緯度, Y/経度）必要です。");
+            
+            const val1 = parseFloat(valuesToCheck[1]);
+            const val2 = parseFloat(valuesToCheck[2]);
+            
+            const isLatLon = !isNaN(val1) && !isNaN(val2) && Math.abs(val1) <= 90 && Math.abs(val2) <= 180;
+            
+            if (isLatLon) {
+                const coordSystemId = document.getElementById('coordSystem').value;
+                return processCsvPoints(csvText, fileName, coordSystemId);
+            } else {
+                showCoordSystemModal(csvText, fileName);
+                return null;
+            }
+        }
 
         function processFiles(files) {
             const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6'];
@@ -550,7 +575,12 @@ function parseCSV(csvText, fileName) {
         function rerenderUI(highlightPointId = null) {
             const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value);
             const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
-            displayTable(processedPoints, highlightPointId); addMarkersAndLine(processedPoints); displayXYPlot(processedPoints, highlightPointId);
+            displayTable(processedPoints, highlightPointId); 
+            addMarkersAndLine(processedPoints); 
+            displayXYPlot(processedPoints, highlightPointId);
+            displayXZPlot(processedPoints, highlightPointId);
+            displayYZPlot(processedPoints, highlightPointId);
+
             const hasPoints = activePoints.length > 0;
             document.getElementById('downloadCsvBtn').style.visibility = hasPoints ? 'visible' : 'hidden'; document.getElementById('downloadDxfBtn').style.visibility = hasPoints ? 'visible' : 'hidden';
             if (Object.keys(loadedFiles).length === 0) document.getElementById('tableContainer').innerHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">GPX/CSVファイルをインポート、またはプロジェクトファイルを読み込んでください</div>`;
@@ -579,11 +609,9 @@ function parseCSV(csvText, fileName) {
 
         Chart.register(window.ChartZoom);
         
-        // ▼▼▼【修正】アスペクト比維持プラグインのロジックを更新 ▼▼▼
         const xyPlotAspectRatioPlugin = {
             id: 'xyPlotAspectRatio',
             afterDataLimits: (chart) => {
-                // ズーム/パン操作中でも1:1を維持するように、isZoomedOrPannedのチェックを削除
                 if (!document.getElementById('aspectRatioToggle').checked) {
                     return;
                 }
@@ -607,7 +635,56 @@ function parseCSV(csvText, fileName) {
                 }
             }
         };
-        // ▲▲▲【修正】アスペクト比維持プラグインのロジックを更新 ▲▲▲
+
+        const xzPlotAspectRatioPlugin = {
+            id: 'xzPlotAspectRatio',
+            afterDataLimits: (chart) => {
+                if (!document.getElementById('xzAspectRatioToggle').checked) { return; }
+                const { x, y } = chart.scales;
+                if (!x.width || !y.height) return;
+                const xRange = x.max - x.min;
+                const yRange = y.max - y.min;
+                if (xRange <= 0 || yRange <= 0) return;
+                const xPixelPerUnit = x.width / xRange;
+                const yPixelPerUnit = y.height / yRange;
+                if (xPixelPerUnit > yPixelPerUnit) {
+                    const newRange = x.width / yPixelPerUnit;
+                    const diff = newRange - xRange;
+                    x.min -= diff / 2;
+                    x.max += diff / 2;
+                } else {
+                    const newRange = y.height / xPixelPerUnit;
+                    const diff = newRange - yRange;
+                    y.min -= diff / 2;
+                    y.max += diff / 2;
+                }
+            }
+        };
+
+        const yzPlotAspectRatioPlugin = {
+            id: 'yzPlotAspectRatio',
+            afterDataLimits: (chart) => {
+                if (!document.getElementById('yzAspectRatioToggle').checked) { return; }
+                const { x, y } = chart.scales;
+                if (!x.width || !y.height) return;
+                const xRange = x.max - x.min;
+                const yRange = y.max - y.min;
+                if (xRange <= 0 || yRange <= 0) return;
+                const xPixelPerUnit = x.width / xRange;
+                const yPixelPerUnit = y.height / yRange;
+                if (xPixelPerUnit > yPixelPerUnit) {
+                    const newRange = x.width / yPixelPerUnit;
+                    const diff = newRange - xRange;
+                    x.min -= diff / 2;
+                    x.max += diff / 2;
+                } else {
+                    const newRange = y.height / xPixelPerUnit;
+                    const diff = newRange - yRange;
+                    y.min -= diff / 2;
+                    y.max += diff / 2;
+                }
+            }
+        };
         
         const scaleBarPlugin = {
             id: 'scaleBar',
@@ -682,8 +759,176 @@ function parseCSV(csvText, fileName) {
                 chartInstance = new Chart(ctx, {
                     data: { datasets: finalDatasets }, 
                     plugins: [xyPlotAspectRatioPlugin, scaleBarPlugin],
-                    options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: 'X座標 (m)' } } }, plugins: { annotation: { annotations }, tooltip: { filter: (item) => item.dataset.type === 'scatter', callbacks: { label: ctx => `${activePoints[Object.values(datasets)[ctx.datasetIndex].originalIndices[ctx.dataIndex]].name}: (Y=${ctx.parsed.x.toFixed(3)}, X=${ctx.parsed.y.toFixed(3)})` } }, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } } },
+                    options: { 
+                        animation: false, 
+                        maintainAspectRatio: false, 
+                        scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: 'X座標 (m)' } } }, 
+                        plugins: { 
+                            annotation: { annotations }, 
+                            tooltip: { filter: (item) => item.dataset.type === 'scatter', callbacks: { label: ctx => `${activePoints[Object.values(datasets)[ctx.datasetIndex].originalIndices[ctx.dataIndex]].name}: (Y=${ctx.parsed.x.toFixed(3)}, X=${ctx.parsed.y.toFixed(3)})` } }, 
+                            zoom: {
+                                zoom: {
+                                    wheel: { enabled: true },
+                                    mode: 'xy',
+                                    onZoomStart: ({chart}) => {
+                                        const toggle = document.getElementById('aspectRatioToggle');
+                                        wasXyAspectRatioChecked = toggle.checked;
+                                        if (wasXyAspectRatioChecked) {
+                                            toggle.checked = false;
+                                            chart.update('none');
+                                        }
+                                    },
+                                    onZoomComplete: ({chart}) => {
+                                        if (wasXyAspectRatioChecked) {
+                                            const toggle = document.getElementById('aspectRatioToggle');
+                                            toggle.checked = true;
+                                            chart.update('none');
+                                        }
+                                        wasXyAspectRatioChecked = false;
+                                    }
+                                },
+                                pan: { enabled: true, mode: 'xy' }
+                            }
+                        },
                         onClick: (evt) => { if (chartInstance.isZoomedOrPanned() && evt.native.detail === 2) { chartInstance.resetZoom(); return; } handlePlotClick(evt); },
+                    }
+                });
+            }
+        }
+
+        function displayXZPlot(points, highlightPointId) {
+            const ctx = document.getElementById('xzPlot');
+            if (points.length === 0) { if (xzChartInstance) { xzChartInstance.destroy(); xzChartInstance = null; } return; }
+            const datasets = {}, lineDatasets = {};
+            points.forEach((p, index) => {
+                if (!datasets[p.fileName]) {
+                    datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] };
+                    lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName].color, borderWidth: 1, pointRadius: 0, showInLegend: false };
+                }
+                datasets[p.fileName].data.push({ x: p.x, y: p.correctedEle });
+                lineDatasets[p.fileName].data.push({ x: p.x, y: p.correctedEle });
+                
+                if (p.id === highlightPointId) {
+                    datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2);
+                } else if (pointsInLastSectionIds.includes(p.id)) {
+                    datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1);
+                } else {
+                    datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName].color + 'B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName].color); datasets[p.fileName].borderWidth.push(1);
+                }
+                datasets[p.fileName].originalIndices.push(index);
+            });
+
+            const finalDatasets = document.getElementById('toggleLineOnXzPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets);
+
+            if (xzChartInstance) {
+                xzChartInstance.data.datasets = finalDatasets;
+                xzChartInstance.update();
+            } else {
+                xzChartInstance = new Chart(ctx, {
+                    data: { datasets: finalDatasets },
+                    plugins: [xzPlotAspectRatioPlugin, scaleBarPlugin],
+                    options: {
+                        animation: false, maintainAspectRatio: false,
+                        scales: { 
+                            x: { title: { display: true, text: 'X座標 (m)' } },
+                            y: { title: { display: true, text: '補正後標高 (m)' } }
+                        },
+                        plugins: {
+                            tooltip: { filter: (item) => item.dataset.type === 'scatter', callbacks: { label: ctx => `${activePoints[Object.values(datasets)[ctx.datasetIndex].originalIndices[ctx.dataIndex]].name}: (X=${ctx.parsed.x.toFixed(3)}, Z=${ctx.parsed.y.toFixed(3)})` } },
+                            zoom: {
+                                zoom: {
+                                    wheel: { enabled: true },
+                                    mode: 'xy',
+                                    onZoomStart: ({chart}) => {
+                                        const toggle = document.getElementById('xzAspectRatioToggle');
+                                        wasXzAspectRatioChecked = toggle.checked;
+                                        if (wasXzAspectRatioChecked) {
+                                            toggle.checked = false;
+                                            chart.update('none');
+                                        }
+                                    },
+                                    onZoomComplete: ({chart}) => {
+                                        if (wasXzAspectRatioChecked) {
+                                            const toggle = document.getElementById('xzAspectRatioToggle');
+                                            toggle.checked = true;
+                                            chart.update('none'); 
+                                        }
+                                        wasXzAspectRatioChecked = false;
+                                    }
+                                },
+                                pan: { enabled: true, mode: 'xy' }
+                            }
+                        },
+                        onClick: (evt) => { if (xzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { xzChartInstance.resetZoom(); return; } const elems = xzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true); if (elems.length > 0) { const elem = elems[0]; const ds = xzChartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } },
+                    }
+                });
+            }
+        }
+
+        function displayYZPlot(points, highlightPointId) {
+            const ctx = document.getElementById('yzPlot');
+            if (points.length === 0) { if (yzChartInstance) { yzChartInstance.destroy(); yzChartInstance = null; } return; }
+            const datasets = {}, lineDatasets = {};
+            points.forEach((p, index) => {
+                if (!datasets[p.fileName]) {
+                    datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] };
+                    lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName].color, borderWidth: 1, pointRadius: 0, showInLegend: false };
+                }
+                datasets[p.fileName].data.push({ x: p.y, y: p.correctedEle });
+                lineDatasets[p.fileName].data.push({ x: p.y, y: p.correctedEle });
+                
+                if (p.id === highlightPointId) {
+                    datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2);
+                } else if (pointsInLastSectionIds.includes(p.id)) {
+                    datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1);
+                } else {
+                    datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName].color + 'B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName].color); datasets[p.fileName].borderWidth.push(1);
+                }
+                datasets[p.fileName].originalIndices.push(index);
+            });
+
+            const finalDatasets = document.getElementById('toggleLineOnYzPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets);
+
+            if (yzChartInstance) {
+                yzChartInstance.data.datasets = finalDatasets;
+                yzChartInstance.update();
+            } else {
+                yzChartInstance = new Chart(ctx, {
+                    data: { datasets: finalDatasets },
+                    plugins: [yzPlotAspectRatioPlugin, scaleBarPlugin],
+                    options: {
+                        animation: false, maintainAspectRatio: false,
+                        scales: { 
+                            x: { title: { display: true, text: 'Y座標 (m)' } },
+                            y: { title: { display: true, text: '補正後標高 (m)' } }
+                        },
+                        plugins: {
+                            tooltip: { filter: (item) => item.dataset.type === 'scatter', callbacks: { label: ctx => `${activePoints[Object.values(datasets)[ctx.datasetIndex].originalIndices[ctx.dataIndex]].name}: (Y=${ctx.parsed.x.toFixed(3)}, Z=${ctx.parsed.y.toFixed(3)})` } },
+                            zoom: {
+                                zoom: {
+                                    wheel: { enabled: true },
+                                    mode: 'xy',
+                                    onZoomStart: ({chart}) => {
+                                        const toggle = document.getElementById('yzAspectRatioToggle');
+                                        wasYzAspectRatioChecked = toggle.checked;
+                                        if (wasYzAspectRatioChecked) {
+                                            toggle.checked = false;
+                                            chart.update('none');
+                                        }
+                                    },
+                                    onZoomComplete: ({chart}) => {
+                                        if (wasYzAspectRatioChecked) {
+                                            const toggle = document.getElementById('yzAspectRatioToggle');
+                                            toggle.checked = true;
+                                            chart.update('none');
+                                        }
+                                        wasYzAspectRatioChecked = false;
+                                    }
+                                },
+                                pan: { enabled: true, mode: 'xy' }
+                            }
+                        },
+                        onClick: (evt) => { if (yzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { yzChartInstance.resetZoom(); return; } const elems = yzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true); if (elems.length > 0) { const elem = elems[0]; const ds = yzChartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } },
                     }
                 });
             }
@@ -720,7 +965,7 @@ function parseCSV(csvText, fileName) {
                 status.style.display = 'none';
                 pointsInLastSectionIds = [];
             }
-            if (!isSectionMode) { rerenderUI(); }
+            rerenderUI();
         }
         
         function getChartCoordsFromClick(e) { if (!chartInstance) return null; return { x: chartInstance.scales.x.getValueForPixel(e.x), y: chartInstance.scales.y.getValueForPixel(e.y) }; }
@@ -751,9 +996,26 @@ function parseCSV(csvText, fileName) {
         
         function updateSelectionHighlights() {
             document.querySelectorAll('#tableContainer tr[data-id]').forEach(row => { row.classList.toggle('in-section', pointsInLastSectionIds.includes(row.dataset.id)); });
-            if (!chartInstance) return; const highlightPointId = document.querySelector('tr.highlighted')?.dataset.id;
-            chartInstance.data.datasets.forEach(dataset => { if (dataset.type !== 'scatter') return; dataset.originalIndices.forEach((originalIndex, dataIndex) => { const point = activePoints[originalIndex]; if (!point) return; if (point.id === highlightPointId) { dataset.pointRadius[dataIndex] = 10; dataset.backgroundColor[dataIndex] = '#ff0000'; dataset.borderColor[dataIndex] = '#000000'; dataset.borderWidth[dataIndex] = 2; } else if (pointsInLastSectionIds.includes(point.id)) { dataset.pointRadius[dataIndex] = 6; dataset.backgroundColor[dataIndex] = '#c79fef'; dataset.borderColor[dataIndex] = '#5d3d7e'; dataset.borderWidth[dataIndex] = 1; } else { dataset.pointRadius[dataIndex] = 5; dataset.backgroundColor[dataIndex] = loadedFiles[point.fileName].color + 'B3'; dataset.borderColor[dataIndex] = loadedFiles[point.fileName].color; dataset.borderWidth[dataIndex] = 1; } }); });
-            chartInstance.update('none');
+            const highlightPointId = document.querySelector('tr.highlighted')?.dataset.id;
+
+            [chartInstance, xzChartInstance, yzChartInstance].forEach(instance => {
+                if (!instance) return;
+                instance.data.datasets.forEach(dataset => {
+                    if (dataset.type !== 'scatter') return;
+                    dataset.originalIndices.forEach((originalIndex, dataIndex) => {
+                        const point = activePoints[originalIndex];
+                        if (!point) return;
+                        if (point.id === highlightPointId) {
+                            dataset.pointRadius[dataIndex] = 10; dataset.backgroundColor[dataIndex] = '#ff0000'; dataset.borderColor[dataIndex] = '#000000'; dataset.borderWidth[dataIndex] = 2;
+                        } else if (pointsInLastSectionIds.includes(point.id)) {
+                            dataset.pointRadius[dataIndex] = 6; dataset.backgroundColor[dataIndex] = '#c79fef'; dataset.borderColor[dataIndex] = '#5d3d7e'; dataset.borderWidth[dataIndex] = 1;
+                        } else {
+                            dataset.pointRadius[dataIndex] = 5; dataset.backgroundColor[dataIndex] = loadedFiles[point.fileName].color + 'B3'; dataset.borderColor[dataIndex] = loadedFiles[point.fileName].color; dataset.borderWidth[dataIndex] = 1;
+                        }
+                    });
+                });
+                instance.update('none');
+            });
         }
 
         function defineSectionLineOnMapAndChart(linePoints) {
@@ -915,19 +1177,19 @@ function parseCSV(csvText, fileName) {
             return dxf;
         }
 
-function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
-    const sys = document.getElementById('coordSystem').value;
-    const pole = parseFloat(document.getElementById('poleHeight').value);
-    const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
-    if (processedPoints.length === 0) { alert("平面図に出力するデータがありません。"); return ''; }
+        function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
+            const sys = document.getElementById('coordSystem').value;
+            const pole = parseFloat(document.getElementById('poleHeight').value);
+            const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
+            if (processedPoints.length === 0) { alert("平面図に出力するデータがありません。"); return ''; }
 
-    let dxf = generateDxfHeaderAndTables(true);
-    dxf += `0\nSECTION\n2\nENTITIES\n`;
-    dxf += generateDxfEntities(processedPoints, gridIntervalPlan);
-    dxf += generateSectionDxfEntities(currentSectionData, gridIntervalSection, 0, 0); 
-    dxf += `0\nENDSEC\n0\nEOF\n`;
-    return dxf;
-}
+            let dxf = generateDxfHeaderAndTables(true);
+            dxf += `0\nSECTION\n2\nENTITIES\n`;
+            dxf += generateDxfEntities(processedPoints, gridIntervalPlan);
+            dxf += generateSectionDxfEntities(currentSectionData, gridIntervalSection, 0, 0); 
+            dxf += `0\nENDSEC\n0\nEOF\n`;
+            return dxf;
+        }
         
         document.getElementById('downloadCsvBtn').addEventListener('click', () => {
             if (activePoints.length === 0) return;
@@ -1068,10 +1330,10 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
                     loadedFiles = {};
                     activePoints = [];
                     lastSectionCoords = null;
-                    if (chartInstance) {
-                        chartInstance.destroy();
-                        chartInstance = null;
-                    }
+                    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+                    if (xzChartInstance) { xzChartInstance.destroy(); xzChartInstance = null; }
+                    if (yzChartInstance) { yzChartInstance.destroy(); yzChartInstance = null; }
+
 
                     for (const fileName in projectData.loadedFiles) {
                         const fileData = projectData.loadedFiles[fileName];
@@ -1131,13 +1393,49 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
             document.getElementById('coordSystem').addEventListener('change', () => rerenderUI());
             document.getElementById('poleHeight').addEventListener('change', () => rerenderUI());
             document.getElementById('toggleLineOnPlot').addEventListener('change', () => rerenderUI());
+            document.getElementById('toggleLineOnXzPlot').addEventListener('change', () => rerenderUI());
+            document.getElementById('toggleLineOnYzPlot').addEventListener('change', () => rerenderUI());
             document.getElementById('aspectRatioToggle').addEventListener('change', () => { if (chartInstance) chartInstance.update(); });
+            document.getElementById('xzAspectRatioToggle').addEventListener('change', () => { if (xzChartInstance) xzChartInstance.update(); });
+            document.getElementById('yzAspectRatioToggle').addEventListener('change', () => { if (yzChartInstance) yzChartInstance.update(); });
+
             const tableContainer = document.getElementById('tableContainer');
             tableContainer.addEventListener('click', (e) => { const targetRow = e.target.closest('tr'); if (!targetRow) return; if (targetRow.classList.contains('highlighted') && e.target.closest('.editable-cell')) return; focusOnPoint(e, targetRow.dataset.id); });
             tableContainer.addEventListener('dblclick', handleTableCellEdit);
             const mobileTabs = document.querySelector('.mobile-only-tabs'); const desktopTabs = document.querySelector('.right-panel .tab-bar'); const leftPanel = document.querySelector('.left-panel'); const rightPanel = document.querySelector('.right-panel');
-            mobileTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); e.target.classList.add('active'); const targetId = e.target.id; if (targetId === 'tab-data-mobile') { leftPanel.classList.remove('hidden-on-mobile'); rightPanel.classList.add('hidden-on-mobile'); } else { leftPanel.classList.add('hidden-on-mobile'); rightPanel.classList.remove('hidden-on-mobile'); if (targetId === 'tab-map-mobile') { document.getElementById('tab-map').click(); } else if (targetId === 'tab-plot-mobile') { document.getElementById('tab-plot').click(); } } });
-            desktopTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; desktopTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); document.querySelectorAll('#pane-map, #pane-plot').forEach(pane => pane.classList.remove('active')); e.target.classList.add('active'); const paneId = e.target.id.replace('tab-', 'pane-'); document.getElementById(paneId).classList.add('active'); if (paneId === 'pane-map') { setTimeout(() => map.invalidateSize(), 10); } else if (paneId === 'pane-plot' && chartInstance) { setTimeout(() => chartInstance.resize(), 10); } });
+            
+            mobileTabs.addEventListener('click', (e) => { 
+                if (!e.target.classList.contains('tab-button')) return; 
+                mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); 
+                e.target.classList.add('active'); 
+                const targetId = e.target.id; 
+                if (targetId === 'tab-data-mobile') { 
+                    leftPanel.classList.remove('hidden-on-mobile'); 
+                    rightPanel.classList.add('hidden-on-mobile'); 
+                } else { 
+                    leftPanel.classList.add('hidden-on-mobile'); 
+                    rightPanel.classList.remove('hidden-on-mobile'); 
+                    if (targetId === 'tab-map-mobile') { document.getElementById('tab-map').click(); } 
+                    else if (targetId === 'tab-plot-mobile') { document.getElementById('tab-plot').click(); }
+                    else if (targetId === 'tab-xz-plot-mobile') { document.getElementById('tab-xz-plot').click(); }
+                    else if (targetId === 'tab-yz-plot-mobile') { document.getElementById('tab-yz-plot').click(); }
+                } 
+            });
+
+            desktopTabs.addEventListener('click', (e) => { 
+                if (!e.target.classList.contains('tab-button')) return; 
+                desktopTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); 
+                document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active')); 
+                e.target.classList.add('active'); 
+                const paneId = e.target.id.replace('tab-', 'pane-'); 
+                document.getElementById(paneId).classList.add('active'); 
+                
+                if (paneId === 'pane-map') { setTimeout(() => map.invalidateSize(), 10); } 
+                else if (paneId === 'pane-plot' && chartInstance) { setTimeout(() => chartInstance.resize(), 10); } 
+                else if (paneId === 'pane-xz-plot' && xzChartInstance) { setTimeout(() => xzChartInstance.resize(), 10); }
+                else if (paneId === 'pane-yz-plot' && yzChartInstance) { setTimeout(() => yzChartInstance.resize(), 10); }
+            });
+
             const body = document.body; body.addEventListener('dragover', (e) => { e.preventDefault(); body.classList.add('drag-over'); }); body.addEventListener('dragleave', () => body.classList.remove('drag-over')); body.addEventListener('drop', (e) => { e.preventDefault(); body.classList.remove('drag-over'); processFiles(e.dataTransfer.files); });
             document.getElementById('section-line-btn').addEventListener('click', toggleSectionLineMode);
             document.getElementById('create-section-profile-btn').addEventListener('click', generateAndShowSectionProfile);
@@ -1147,7 +1445,16 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
             plotCanvas.addEventListener('touchstart', handlePlotDrawStart, { passive: false }); plotCanvas.addEventListener('touchmove', handlePlotDrawMove, { passive: false }); plotCanvas.addEventListener('touchend', handlePlotDrawEnd);
             const sectionModal = document.getElementById('section-modal');
             sectionModal.addEventListener('click', (e) => { if (e.target === sectionModal || e.target.classList.contains('modal-close')) sectionModal.style.display = 'none'; });
-            window.addEventListener('resize', () => { setTimeout(() => { if(map) map.invalidateSize(); if(chartInstance) chartInstance.resize(); if(sectionChartInstance) sectionChartInstance.resize(); }, 100); });
+            
+            window.addEventListener('resize', () => { 
+                setTimeout(() => { 
+                    if(map) map.invalidateSize(); 
+                    if(chartInstance) chartInstance.resize(); 
+                    if(xzChartInstance) xzChartInstance.resize();
+                    if(yzChartInstance) yzChartInstance.resize();
+                    if(sectionChartInstance) sectionChartInstance.resize(); 
+                }, 100); 
+            });
             
             document.getElementById('projectSaveBtnHeader').addEventListener('click', saveProject);
             document.getElementById('projectLoadBtnHeader').addEventListener('click', () => document.getElementById('projectInput').click());
