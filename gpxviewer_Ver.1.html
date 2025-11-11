@@ -396,8 +396,55 @@ function parseCSVLine(line) {
         function latLonToXY(lat, lon, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [y, x] = proj4('EPSG:4326', `EPSG:${system.epsg}`, [lon, lat]); return { x, y }; }
         function xyToLatLon(x, y, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [lon, lat] = proj4(`EPSG:${system.epsg}`, 'EPSG:4326', [y, x]); return { lat, lon }; }
         function initMap() { const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '© GSI' }); map = L.map('map', { layers: [gsiStd] }).setView([36.2, 139.0], 5); L.control.layers({ "地理院地図": gsiStd, "写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg', { attribution: '© GSI' }) }).addTo(map); L.control.scale({ imperial: false }).addTo(map); polylineLayer = L.layerGroup().addTo(map); }
-        function parseGPX(xmlText, fileName) { const parser = new DOMParser(); const xmlDoc = parser.parseFromString(xmlText, 'text/xml'); const wpts = xmlDoc.getElementsByTagName('wpt'); const points = []; for (let i = 0; i < wpts.length; i++) { const wpt = wpts[i]; const getTagText = (p, t) => p.getElementsByTagName(t)[0]?.textContent || null; const d = { id: `${fileName}-${i}`, name: getTagText(wpt, 'name') || `P${points.length + 1}`, lat: parseFloat(wpt.getAttribute('lat')), lon: parseFloat(wpt.getAttribute('lon')), antennaHeight: parseFloat(getTagText(wpt, 'ele') || 0), time: getTagText(wpt, 'time') || '', cmtText: getTagText(wpt, 'cmt') || '', pointGeoidHeight: parseFloat(getTagText(wpt, 'geoidheight') || 0), ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {} }; if (d.cmtText) { const m = d.cmtText.match(/ellipsoidHeight=([\d\.-]+)/); if (m) d.ellipsoidHeight = parseFloat(m[1]); } if (d.ellipsoidHeight !== null && d.pointGeoidHeight !== null) { d.eleDiff = d.antennaHeight - (d.ellipsoidHeight - d.pointGeoidHeight); } points.push(d); } return points; }
         
+        // ▼▼▼【修正】GPX解析関数を更新 ▼▼▼
+        function parseGPX(xmlText, fileName) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            const wpts = xmlDoc.getElementsByTagName('wpt');
+            const points = [];
+            for (let i = 0; i < wpts.length; i++) {
+                const wpt = wpts[i];
+                const getTagText = (p, t) => p.getElementsByTagName(t)[0]?.textContent || null;
+                const d = {
+                    id: `${fileName}-${i}`,
+                    name: getTagText(wpt, 'name') || `P${points.length + 1}`,
+                    lat: parseFloat(wpt.getAttribute('lat')),
+                    lon: parseFloat(wpt.getAttribute('lon')),
+                    antennaHeight: parseFloat(getTagText(wpt, 'ele') || 0),
+                    time: getTagText(wpt, 'time') || '',
+                    cmtText: getTagText(wpt, 'cmt') || '',
+                    pointGeoidHeight: parseFloat(getTagText(wpt, 'geoidheight') || 0),
+                    geoidSystem: '', // 新規追加
+                    fixMode: '',     // 新規追加
+                    ellipsoidHeight: null,
+                    eleDiff: null,
+                    fileName: fileName,
+                    modifiedFields: {}
+                };
+
+                const extensions = wpt.getElementsByTagName('extensions')[0];
+                if (extensions) {
+                    const measurement = extensions.getElementsByTagName('b:measurement')[0];
+                    if (measurement) {
+                        d.geoidSystem = getTagText(measurement, 'b:geoidSystem') || '';
+                        d.fixMode = getTagText(measurement, 'b:fixMode') || '';
+                    }
+                }
+
+                if (d.cmtText) {
+                    const m = d.cmtText.match(/ellipsoidHeight=([\d\.-]+)/);
+                    if (m) d.ellipsoidHeight = parseFloat(m[1]);
+                }
+                if (d.ellipsoidHeight !== null && d.pointGeoidHeight !== null) {
+                    d.eleDiff = d.antennaHeight - (d.ellipsoidHeight - d.pointGeoidHeight);
+                }
+                points.push(d);
+            }
+            return points;
+        }
+        // ▲▲▲【修正】GPX解析関数を更新 ▲▲▲
+
         function processCsvPoints(csvText, fileName, coordSystemId) {
             const lines = csvText.trim().split(/\r?\n/);
             const headerLineTest = lines[0].toLowerCase();
@@ -450,15 +497,10 @@ function parseCSV(csvText, fileName) {
     const lines = csvText.trim().split(/\r?\n/);
     if (lines.length === 0 || (lines.length === 1 && lines[0].trim() === '')) throw new Error("データが空です。");
 
-    // ▼▼▼ 修正箇所 ▼▼▼
-    // ヘッダー行があるかどうかを先に判定
     const headerLineTest = lines[0].toLowerCase();
     const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point');
-
-    // ヘッダーがあれば2行目、なければ1行目をチェック対象とする
     const lineToCheck = hasHeader ? lines[1] : lines[0];
 
-    // チェック対象の行がない場合（ヘッダーしかないファイルなど）はエラー
     if (!lineToCheck) {
         throw new Error("データ行が見つかりません。");
     }
@@ -469,9 +511,7 @@ function parseCSV(csvText, fileName) {
     const val1 = parseFloat(valuesToCheck[1]);
     const val2 = parseFloat(valuesToCheck[2]);
     
-    // val1やval2が数値でない場合(NaN)も考慮し、isLatLon判定を行う
     const isLatLon = !isNaN(val1) && !isNaN(val2) && Math.abs(val1) <= 90 && Math.abs(val2) <= 180;
-    // ▲▲▲ 修正箇所 ▲▲▲
     
     if (isLatLon) {
         const coordSystemId = document.getElementById('coordSystem').value;
@@ -798,32 +838,58 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
     const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
     if (processedPoints.length === 0) { alert("平面図に出力するデータがありません。"); return ''; }
 
-    // --- ▼ 不要なオフセット計算を削除 ▼ ---
-    /*
-    const planMinX = Math.min(...processedPoints.map(p => p.y)); const planMaxX = Math.max(...processedPoints.map(p => p.y));
-    const planMinY = Math.min(...processedPoints.map(p => p.x)); const planMaxY = Math.max(...processedPoints.map(p => p.x));
-    const planWidth = planMaxX - planMinX; const planHeight = planMaxY - planMinY;
-
-    const sectionMinElev = Math.min(...currentSectionData.map(p => p.y)); const sectionMaxElev = Math.max(...currentSectionData.map(p => p.y));
-    const sectionHeight = sectionMaxElev - sectionMinElev;
-    
-    const margin = Math.max(planWidth, planHeight) * 0.1 || 10;
-    const offsetX = planMinX;
-    const offsetY = planMinY - margin - sectionHeight;
-    */
-    // --- ▲ 不要なオフセット計算を削除 ▲ ---
-
     let dxf = generateDxfHeaderAndTables(true);
     dxf += `0\nSECTION\n2\nENTITIES\n`;
     dxf += generateDxfEntities(processedPoints, gridIntervalPlan);
-    // --- ▼ オフセットに 0 を指定する ▼ ---
     dxf += generateSectionDxfEntities(currentSectionData, gridIntervalSection, 0, 0); 
-    // --- ▲ オフセットに 0 を指定する ▲ ---
     dxf += `0\nENDSEC\n0\nEOF\n`;
     return dxf;
 }
         
-        document.getElementById('downloadCsvBtn').addEventListener('click', () => { if (activePoints.length === 0) return; const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const coordSysText = document.getElementById('coordSystem').selectedOptions[0].textContent; const poleHeightText = document.getElementById('poleHeight').selectedOptions[0].textContent; let csv = "\uFEFF"; csv += `座標系,${coordSysText}\r\n`; csv += `ポール高補正,${poleHeightText}\r\n\r\n`; csv += "ファイル名,測点名,測定日時,緯度,経度,X座標(m),Y座標(m),アンテナ高(m),補正後標高(m),cmt\r\n"; const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys) , correctedEle: p.antennaHeight - pole })); processedPoints.forEach(p => { const ts = p.time ? new Date(p.time).toLocaleString('ja-JP') : ''; const cmtSanitized = '"' + (p.cmtText || '').replace(/"/g, '""') + '"'; const row = [ p.fileName, p.name, ts, p.lat.toFixed(9), p.lon.toFixed(9), p.x.toFixed(4), p.y.toFixed(4), p.antennaHeight.toFixed(4), p.correctedEle.toFixed(4), cmtSanitized ].join(","); csv += row + "\r\n"; }); if(lastSectionCoords) { csv += "\r\n断面線情報\r\n項目,緯度,経度,X座標,Y座標\r\n"; lastSectionCoords.path.forEach((p, i) => { csv += `経由点${i+1},${p.lat.toFixed(9)},${p.lon.toFixed(9)},${lastSectionCoords.pathXY[i].y.toFixed(4)},${lastSectionCoords.pathXY[i].x.toFixed(4)}\r\n`; }); } const link = document.createElement("a"); link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download = `survey_data_edited_系${sys}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+        // ▼▼▼【修正】CSVダウンロード処理を更新 ▼▼▼
+        document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+            if (activePoints.length === 0) return;
+            const sys = document.getElementById('coordSystem').value;
+            const pole = parseFloat(document.getElementById('poleHeight').value);
+            const coordSysText = document.getElementById('coordSystem').selectedOptions[0].textContent;
+            const poleHeightText = document.getElementById('poleHeight').selectedOptions[0].textContent;
+            let csv = "\uFEFF";
+            csv += `座標系,${coordSysText}\r\n`;
+            csv += `ポール高補正,${poleHeightText}\r\n\r\n`;
+            csv += "ファイル名,測点名,測定日時,緯度,経度,X座標(m),Y座標(m),アンテナ高(m),補正後標高(m),cmt,ジオイド高(m),ジオイドシステム,FIXモード\r\n";
+            const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
+            
+            processedPoints.forEach(p => {
+                const ts = p.time ? new Date(p.time).toLocaleString('ja-JP') : '';
+                const cmtSanitized = '"' + (p.cmtText || '').replace(/"/g, '""') + '"';
+                const row = [
+                    p.fileName, p.name, ts,
+                    p.lat.toFixed(9), p.lon.toFixed(9),
+                    p.x.toFixed(4), p.y.toFixed(4),
+                    p.antennaHeight.toFixed(4), p.correctedEle.toFixed(4),
+                    cmtSanitized,
+                    (p.pointGeoidHeight || 0).toFixed(4),
+                    p.geoidSystem || '',
+                    p.fixMode || ''
+                ].join(",");
+                csv += row + "\r\n";
+            });
+
+            if (lastSectionCoords) {
+                csv += "\r\n断面線情報\r\n項目,緯度,経度,X座標,Y座標\r\n";
+                lastSectionCoords.path.forEach((p, i) => {
+                    csv += `経由点${i+1},${p.lat.toFixed(9)},${p.lon.toFixed(9)},${lastSectionCoords.pathXY[i].y.toFixed(4)},${lastSectionCoords.pathXY[i].x.toFixed(4)}\r\n`;
+                });
+            }
+            const link = document.createElement("a");
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            link.download = `survey_data_edited_系${sys}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        // ▲▲▲【修正】CSVダウンロード処理を更新 ▲▲▲
+        
         document.getElementById('downloadDxfBtn').addEventListener('click', () => { if (activePoints.length === 0) return; const gridInterval = parseFloat(prompt("グリッドの間隔(m)を入力してください。(不要な場合はキャンセル)", "10.0")); const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole })); let dxfContent = generateDxfHeaderAndTables() + `0\nSECTION\n2\nENTITIES\n` + generateDxfEntities(processedPoints, gridInterval) + `0\nENDSEC\n0\nEOF\n`; const blob = new Blob([dxfContent], { type: 'application/dxf' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `survey_data_系${sys}.dxf`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
         document.getElementById('downloadSectionCsvBtn').addEventListener('click', () => { if (currentSectionData.length === 0) return; let csv = "\uFEFF"; csv += "測点名,始点からの距離(m),アンテナ高(m),補正後標高(m),X座標(m),Y座標(m)\r\n"; currentSectionData.forEach(p => { csv += `${p.name},${p.x.toFixed(4)},${p.antennaHeight.toFixed(4)},${p.y.toFixed(4)},${p.originalX.toFixed(4)},${p.originalY.toFixed(4)}\r\n`; }); const link = document.createElement("a"); link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download = 'section_data.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
         
@@ -857,14 +923,13 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
             }
         });
 
-        // --- ▼▼▼【修正】プロジェクト保存・読込機能を改善 ▼▼▼ ---
         function saveProject() {
             if (Object.keys(loadedFiles).length === 0) {
                 alert("保存するデータがありません。");
                 return;
             }
             const projectData = {
-                version: "3.1", // バージョン更新
+                version: "3.1",
                 savedAt: new Date().toISOString(),
                 loadedFiles: {},
                 pointOrder: activePoints.map(p => p.id),
@@ -884,7 +949,6 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
                     visible: fileData.visible,
                     color: fileData.color,
                     modifications: {},
-                    // 【追加】 gpxContentがない場合、ポイントデータを直接保存
                     pointsData: fileData.gpxContent === null ? fileData.points.map(p => ({
                         id: p.id, name: p.name, lat: p.lat, lon: p.lon, antennaHeight: p.antennaHeight, time: p.time, cmtText: p.cmtText,
                         pointGeoidHeight: p.pointGeoidHeight, ellipsoidHeight: p.ellipsoidHeight, eleDiff: p.eleDiff
@@ -932,7 +996,6 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
                         const fileData = projectData.loadedFiles[fileName];
                         let points = [];
 
-                        // 【修正】 gpxContent または pointsData からデータを復元
                         if (fileData.gpxContent) {
                             points = parseGPX(fileData.gpxContent, fileName);
                         } else if (fileData.pointsData) {
@@ -967,7 +1030,6 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
                     lastSectionCoords = ui.lastSectionCoords;
                     
                     updateFileListUI();
-                    // 【修正】 rerenderUIではなくupdateUIを呼び出して、activePointsを正しく再構築する
                     updateUI();
 
                 } catch (err) {
@@ -978,7 +1040,6 @@ function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) {
             };
             reader.readAsText(file);
         }
-        // --- ▲▲▲【修正】プロジェクト保存・読込機能を改善 ▲▲▲ ---
 
         function initialize() {
             coordinateSystems.forEach(sys => { const projDef = `+proj=tmerc +lat_0=${sys.lat0} +lon_0=${sys.lon0} +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs`; proj4.defs(`EPSG:${sys.epsg}`, projDef); });
