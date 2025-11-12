@@ -129,34 +129,30 @@
         .loading { color: #7f8c8d; }
 
 @media (max-width: 768px) {
-            .mobile-only-tabs { display: flex; height: auto; }
-            .mobile-only-tabs .tab-button { flex-grow: 1; text-align: center; }
+            /* ▼ここから修正 */
+            .mobile-only-tabs {
+                display: flex;
+                height: auto;
+                overflow-x: auto; /* 横スクロールを有効にする */
+                flex-wrap: nowrap;  /* 折り返しを禁止する */
+                -webkit-overflow-scrolling: touch; /* iOSでの慣性スクロール */
+                scrollbar-width: none; /* スクロールバーを非表示 (Firefox) */
+            }
+            .mobile-only-tabs::-webkit-scrollbar {
+                display: none; /* スクロールバーを非表示 (Chrome, Safari) */
+            }
+            .mobile-only-tabs .tab-button {
+                flex-grow: 0; /* ボタンが伸びないようにする */
+                flex-shrink: 0; /* ボタンが縮まないようにする */
+                text-align: center;
+                white-space: nowrap; /* ボタン内のテキスト改行を防ぐ */
+            }
+            /* ▲ここまで修正 */
+
             .main-container { flex-direction: column; }
             .left-panel, .right-panel { width: 100%; border-right: none; flex: 1; min-height: 0; }
             .left-panel.hidden-on-mobile, .right-panel.hidden-on-mobile { display: none; }
-            /* .right-panel .tab-bar { display: none; }  <- この行を削除 */
-
-            /* ▼ここからが新しいスタイルです */
-            .right-panel .tab-bar {
-                display: flex;          /* Flexboxレイアウトを有効にする */
-                overflow-x: auto;       /* 横方向のコンテンツがはみ出た場合にスクロールを許可する */
-                flex-wrap: nowrap;      /* タブが折り返さず、1行に並ぶように強制する */
-                -webkit-overflow-scrolling: touch; /* iOSでスムーズな慣性スクロールを有効にする */
-                
-                /* スクロールバーを非表示にするための設定 */
-                scrollbar-width: none; /* Firefox用 */
-            }
-            
-            /* Webkit系ブラウザ（Chrome, Safari）用のスクロールバー非表示設定 */
-            .right-panel .tab-bar::-webkit-scrollbar {
-                display: none;
-            }
-
-            .right-panel .tab-bar .tab-button {
-                flex-shrink: 0; /* タブがコンテナに合わせて縮まないようにする */
-                white-space: nowrap; /* ボタン内のテキストが改行されないようにする */
-            }
-            /* ▲ここまで新しいスタイルを追加 */
+            .right-panel .tab-bar { display: none; } /* ← この行は必ず残してください */
             
             .compact-controls { grid-template-columns: 1fr 1fr 1fr; }
             
@@ -185,6 +181,8 @@
         <button id="tab-data-mobile" class="tab-button active">📊 データ</button>
         <button id="tab-map-mobile" class="tab-button">🗺️ 地図</button>
         <button id="tab-plot-mobile" class="tab-button">📈 XY</button>
+        <button id="tab-xz-plot-mobile" class="tab-button">📉 XZ</button> <!-- ← 追加 -->
+        <button id="tab-yz-plot-mobile" class="tab-button">📉 YZ</button> <!-- ← 追加 -->
         <button id="tab-3d-plot-mobile" class="tab-button">🌐 3D</button>
     </div>
 
@@ -746,7 +744,15 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
             tableContainer.addEventListener('click', (e) => { const targetRow = e.target.closest('tr'); if (!targetRow) return; if (e.target.classList.contains('visibility-toggle')) return; if (targetRow.classList.contains('highlighted') && e.target.closest('.editable-cell')) return; if (window.getSelection().toString()) return; focusOnPoint(e, targetRow.dataset.id); });
             tableContainer.addEventListener('dblclick', handleTableCellEdit);
             const mobileTabs = document.querySelector('.mobile-only-tabs'); const desktopTabs = document.querySelector('.right-panel .tab-bar'); const leftPanel = document.querySelector('.left-panel'); const rightPanel = document.querySelector('.right-panel');
-            mobileTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); e.target.classList.add('active'); const targetId = e.target.id; if (targetId === 'tab-data-mobile') { leftPanel.classList.remove('hidden-on-mobile'); rightPanel.classList.add('hidden-on-mobile'); } else { leftPanel.classList.add('hidden-on-mobile'); rightPanel.classList.remove('hidden-on-mobile'); if (targetId === 'tab-map-mobile') { document.getElementById('tab-map').click(); } else if (targetId === 'tab-plot-mobile') { document.getElementById('tab-plot').click(); } else if (targetId === 'tab-3d-plot-mobile') { document.getElementById('tab-3d-plot').click(); } } });
+            mobileTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); e.target.classList.add('active'); const targetId = e.target.id; if (targetId === 'tab-data-mobile') { leftPanel.classList.remove('hidden-on-mobile'); rightPanel.classList.add('hidden-on-mobile'); } else { leftPanel.classList.add('hidden-on-mobile'); rightPanel.classList.remove('hidden-on-mobile'); if (targetId === 'tab-map-mobile') { document.getElementById('tab-map').click(); } else if (targetId === 'tab-plot-mobile') { document.getElementById('tab-plot').click();                     } else if (targetId === 'tab-xz-plot-mobile') { // ▼ここから追加
+                        document.getElementById('tab-xz-plot').click();
+                    } else if (targetId === 'tab-yz-plot-mobile') {
+                        document.getElementById('tab-yz-plot').click(); // ▲ここまで追加
+                    } else if (targetId === 'tab-3d-plot-mobile') {
+                        document.getElementById('tab-3d-plot').click();
+                    }
+                }
+            });
             desktopTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; desktopTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active')); e.target.classList.add('active'); const paneId = e.target.id.replace('tab-', 'pane-'); document.getElementById(paneId).classList.add('active'); if (paneId === 'pane-map') { setTimeout(() => map.invalidateSize(), 10); } else if (paneId === 'pane-plot' && chartInstance) { setTimeout(() => chartInstance.resize(), 10); } else if (paneId === 'pane-xz-plot' && xzChartInstance) { setTimeout(() => xzChartInstance.resize(), 10); } else if (paneId === 'pane-yz-plot' && yzChartInstance) { setTimeout(() => yzChartInstance.resize(), 10); } else if (paneId === 'pane-3d-plot') { setTimeout(() => Plotly.Plots.resize(document.getElementById('plot-3d-container')), 10); } });
             const body = document.body; body.addEventListener('dragover', (e) => { e.preventDefault(); body.classList.add('drag-over'); }); body.addEventListener('dragleave', () => body.classList.remove('drag-over')); body.addEventListener('drop', (e) => { e.preventDefault(); body.classList.remove('drag-over'); processFiles(e.dataTransfer.files); });
             document.getElementById('section-line-btn').addEventListener('click', toggleSectionLineMode);
