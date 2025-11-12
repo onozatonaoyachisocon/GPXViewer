@@ -128,6 +128,29 @@
 
         .loading { color: #7f8c8d; }
 
+/* --- ここから追記 --- */
+
+/* 右パネルのタブバーに横スクロールを適用 */
+.right-panel .tab-bar {
+    flex-wrap: nowrap; /* タブが折り返さないように変更 */
+    overflow-x: auto;  /* 横方向のスクロールを有効にする */
+    -webkit-overflow-scrolling: touch; /* iOSでの慣性スクロールを滑らかに */
+    scrollbar-width: none; /* Firefoxでスクロールバーを非表示 */
+}
+
+/* Chrome, Safari, Edgeでスクロールバーを非表示にする */
+.right-panel .tab-bar::-webkit-scrollbar {
+    display: none;
+}
+
+/* 各タブボタンがコンテナ幅に応じて縮まないようにする */
+.right-panel .tab-bar .tab-button {
+    flex-shrink: 0;
+}
+
+/* --- ここまで追記 --- */
+
+
         @media (max-width: 768px) {
             .mobile-only-tabs { display: flex; height: auto; }
             .mobile-only-tabs .tab-button { flex-grow: 1; text-align: center; }
