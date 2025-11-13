@@ -114,9 +114,19 @@
         #help-modal ul li { margin-bottom: 5px; }
         #help-modal small { color: #555; }
 
-        .legal-notice { font-size: 11px; text-align: center; padding: 10px 0; color: #555; background: #f0f2f5; border-top: 1px solid #ccc; flex-shrink: 0; }
-        #lastUpdated { font-size: 12px; margin-bottom: 10px; }
-        #legal-toggle { cursor: pointer; font-weight: bold; }
+.legal-notice { font-size: 11px; text-align: center; padding: 10px 0; color: #555; background: #f0f2f5; border-top: 1px solid #ccc; flex-shrink: 0; }
+        #lastUpdated {
+            display: inline-block; /* 要素を横に並べるために指定 */
+            vertical-align: middle; /* 垂直方向の位置を中央に揃える */
+            font-size: 12px;
+            margin-right: 2em; /* 「免責事項」との間にスペースを設ける */
+        }
+        #legal-toggle {
+            display: inline-block; /* 要素を横に並べるために指定 */
+            vertical-align: middle; /* 垂直方向の位置を中央に揃える */
+            cursor: pointer;
+            font-weight: bold;
+        }
         #legal-details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
         #legal-details p { margin-bottom: 5px; }
         .color-indicator { display: inline-block; width: 12px; height: 12px; border: 1px solid #ccc; margin-right: 5px; vertical-align: middle; }
@@ -1167,7 +1177,7 @@
             document.getElementById('text-import-ok').addEventListener('click', () => { const textContent = document.getElementById('text-import-textarea').value; if (textContent.trim() === '') { alert('テキストが入力されていません。'); return; } const fileName = `Pasted_Data_${textImportCounter++}`; try { const points = parseCSV(textContent, fileName); if (points === null) {} else if(points.length === 0) { alert(`貼り付けられたテキストから有効な測点を読み込めませんでした。`); } else { loadedFiles[fileName] = { points, visible: true, color: COLORS[Object.keys(loadedFiles).length % COLORS.length], gpxContent: null }; updateFileListUI(); updateUI(); } } catch (err) { alert(`テキスト解析エラー: ${err.message}`); } textImportModal.style.display = 'none'; });
             document.querySelectorAll('#section-type-switch-container input[name="sectionType"]').forEach(radio => { radio.addEventListener('change', (e) => updateSectionPlot(e.target.value)); });
             const today = new Date();
-            document.getElementById('lastUpdated').textContent = `最終更新日: ${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            document.getElementById('lastUpdated').textContent = `最終更新日: 2025年11月13日`;
             const helpBtn = document.getElementById('helpBtn');
             const helpModal = document.getElementById('help-modal');
             helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
