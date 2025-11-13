@@ -63,7 +63,7 @@
         #plot-context-menu button:hover { background: #f0f0f0; }
 
         .info-panel { padding: 10px 15px; background: #fff; margin: 10px 10px 0 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .compact-controls { display: grid; grid-template-columns: repeat(3, auto) 1fr 2fr repeat(3, auto); gap: 8px; margin-bottom: 10px; align-items: end;}
+        .compact-controls { display: grid; grid-template-columns: repeat(3, auto) 1fr 1.5fr 1fr repeat(3, auto); gap: 8px; margin-bottom: 10px; align-items: end;}
         .control-group { display: flex; flex-direction: column; }
         .control-group label { font-size: 0.8em; margin-bottom: 2px; color: #555; font-weight: bold; }
         .control-group input, .control-group select, .control-group button { padding: 8px; background: #fff; border-radius: 4px; border: 1px solid #ccc; font-size: 0.9em; width: 100%; }
@@ -85,7 +85,7 @@
         td.editable-cell:hover { background-color: #fffacd; cursor: text; }
         td.editable-cell input { width: 100%; border: 1px solid #3498db; outline: none; padding: 6px; box-sizing: border-box; font-size: 1em; }
         td.modified-cell { background-color: #e0f7fa; }
-        td.modified-cell > strong::after { content: " ✏️"; font-size: 0.8em; display: inline-block; }
+        td.modified-cell > strong::after { content: "✏️"; font-size: 0.8em; display: inline-block; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 80%; max-width: 900px; height: 80%; max-height: 600px; display: flex; flex-direction: column; }
@@ -129,32 +129,32 @@
         .loading { color: #7f8c8d; }
 
 @media (max-width: 768px) {
-            /* ▼ここから修正 */
             .mobile-only-tabs {
                 display: flex;
                 height: auto;
-                overflow-x: auto; /* 横スクロールを有効にする */
-                flex-wrap: nowrap;  /* 折り返しを禁止する */
-                -webkit-overflow-scrolling: touch; /* iOSでの慣性スクロール */
-                scrollbar-width: none; /* スクロールバーを非表示 (Firefox) */
+                overflow-x: auto;
+                flex-wrap: nowrap; 
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
             }
             .mobile-only-tabs::-webkit-scrollbar {
-                display: none; /* スクロールバーを非表示 (Chrome, Safari) */
+                display: none;
             }
             .mobile-only-tabs .tab-button {
-                flex-grow: 0; /* ボタンが伸びないようにする */
-                flex-shrink: 0; /* ボタンが縮まないようにする */
+                flex-grow: 0;
+                flex-shrink: 0;
                 text-align: center;
-                white-space: nowrap; /* ボタン内のテキスト改行を防ぐ */
+                white-space: nowrap;
             }
-            /* ▲ここまで修正 */
 
             .main-container { flex-direction: column; }
             .left-panel, .right-panel { width: 100%; border-right: none; flex: 1; min-height: 0; }
             .left-panel.hidden-on-mobile, .right-panel.hidden-on-mobile { display: none; }
-            .right-panel .tab-bar { display: none; } /* ← この行は必ず残してください */
+            .right-panel .tab-bar { display: none; }
             
-            .compact-controls { grid-template-columns: 1fr 1fr 1fr; }
+            .compact-controls {
+        grid-template-columns: auto 1fr 1.5fr 1fr;
+    }
             
             .control-group.mobile-hidden { display: none; }
             .mobile-hidden-col { display: none; }
@@ -181,8 +181,8 @@
         <button id="tab-data-mobile" class="tab-button active">📊 データ</button>
         <button id="tab-map-mobile" class="tab-button">🗺️ 地図</button>
         <button id="tab-plot-mobile" class="tab-button">📈 XY</button>
-        <button id="tab-xz-plot-mobile" class="tab-button">📉 XZ</button> <!-- ← 追加 -->
-        <button id="tab-yz-plot-mobile" class="tab-button">📉 YZ</button> <!-- ← 追加 -->
+        <button id="tab-xz-plot-mobile" class="tab-button">📉 XZ</button>
+        <button id="tab-yz-plot-mobile" class="tab-button">📉 YZ</button>
         <button id="tab-3d-plot-mobile" class="tab-button">🌐 3D</button>
     </div>
 
@@ -224,6 +224,10 @@
                             <input type="number" id="poleHeight" value="0" step="0.001" style="flex-grow: 1; flex-basis: 0; min-width: 100px;">    
                         </div>
                     </div>
+                    <div class="control-group">
+                        <label for="datum-select">💧基準面</label>
+                        <select id="datum-select"></select>
+                    </div>
                     <div class="control-group mobile-hidden">
                         <label>統計処理</label>
                         <button id="clusterStatsBtn">📊近接点処理</button>
@@ -252,10 +256,11 @@
                             <label><input type="checkbox" id="aspectRatioToggle"> 📐スケール 1:1 1️⃣</label>
                             <div id="section-controls-group">
                                 <select id="section-mode-select" title="断面線の作成方法を選択">
-                                    <option value="2-point">①任意の2点</option>
+                                    <option value="2-point">①任意の線</option>
                                     <option value="vertical">②鉛直</option>
                                     <option value="horizontal">③水平</option>
-                                    <option value="coords">④座標指定</option>
+                                    <option value="point-select">④測定点</option>
+                                    <option value="coords">⑤座標指定</option>
                                 </select>
                                 <label>2️⃣断面幅(m): <input type="number" id="section-width-input" value="5.0" step="0.1" style="width: 60px;"></label>
                                 <button id="section-line-btn">3️⃣断面線作成</button>
@@ -425,7 +430,7 @@
                         データは左の「データパネル」と右の「🗺️ 地図」「📈XYプロット」などに表示されます。
                         <ul>
                             <li><b>データパネル</b>: ファイルごとの表示/非表示の切り替えや削除ができます。</li>
-                            <li><b>テーブル</b>: 測点の一覧です。行のドラッグで並べ替え、測点名やアンテナ高のセルをダブルクリックすると値を直接編集できます。テーブルの「👁️」ボタンで個別の測点を一時的に非表示（間引き）できます。</li>
+                            <li><b>テーブル</b>: 測点の一覧です。行のドラッグで並べ替え、測点名やアンテナ高のセルをダブルクリックすると値を直接編集できます。テーブルの「👁️」ボタンで個別の測点を一時的に非表示（間引き）できます。「💧基準面」プルダウンから、T.P.以外の基準水準面での標高（換算標高）を表示できます。</li>
                             <li><b>🗺️地図</b>: 地理院地図上に測点の位置がプロットされます。マーカーをクリックすると詳細情報を確認でき、そこから非表示にすることも可能です。</li>
                             <li><b>📈XY/📉XZ/YZプロット</b>: 各平面での位置関係を確認できます。マウスホイールでズーム、ドラッグでパン（移動）ができます。XYプロットでは点を右クリックして非表示にできます。</li>
                             <li><b>🌐3Dプロット</b>: 測点を3次元空間にプロットします。マウス操作で自由に回転・ズーム・パンが可能です。</li>
@@ -444,9 +449,10 @@
                     <li>
                         <b>断面線の定義</b>:
                         <ul>
-                            <li><b>任意の2点</b>: プロット上をドラッグして始点と終点を結ぶ線を作成します。</li>
+                            <li><b>任意の線</b>: プロット上をドラッグして始点と終点を結ぶ線を作成します。</li>
                             <li><b>鉛直/水平</b>: プロット上をクリックして、その位置を通る垂直線または水平線を作成します。</li>
-                            <li><b>座標指定</b>: 「④座標指定」を選択し、表示されるウィンドウに始点と終点のXY座標を直接入力して断面線を定義します。</li>
+                            <li><b>測定点</b>: プロット上の測点を2つクリックして、その2点を結ぶ断面線を定義します。</li>
+                            <li><b>座標指定</b>: 「⑤座標指定」を選択し、表示されるウィンドウに始点と終点のXY座標を直接入力して断面線を定義します。</li>
                         </ul>
                     </li>
                     <li><b>測点の選択</b>: 断面線が定義されると、設定した「断面幅」に含まれる測点が自動的に選択されます（テーブル上で紫色にハイライト）。プロット上の点をクリックすることで、手動で測点を追加・削除できます。</li>
@@ -521,12 +527,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 
-    <script>
-        // --- (JavaScript) ---
+ <script>
         // --- (JavaScript) ---
         let map, polylineLayer, sortableInstance, chartInstance, xzChartInstance, yzChartInstance, sectionChartInstance, mapSectionLine;
         let loadedFiles = {}, activePoints = [], currentSectionData = {}, lastSectionCoords = null, lastDefinedSectionLinePoints = null;
         let isSectionMode = false, isSectionLineDefined = false, sectionLineStart = null;
+        // ▼ 変更点: 断面線作成のための1点目選択状態を管理する変数を変更
+        let isSelectingSectionPoints = false, sectionLinePoint1_ID = null, sectionLinePoint1_Coords = null;
+        // ▲ 変更点
         let pointsInLastSectionIds = [];
         let isDrawingSectionLine = false;
         let tempCsvContent = null;
@@ -548,12 +556,26 @@
         const findLongestCommonPrefix = (strs) => { if (!strs || strs.length === 0) return ''; let prefix = strs[0]; for (let i = 1; i < strs.length; i++) { while (strs[i].indexOf(prefix) !== 0) { prefix = prefix.substring(0, prefix.length - 1); if (prefix === '') return ''; } } return prefix.replace(/[\s-_\.\+]+$/, ''); };
 
         const coordinateSystems = [ {num:1, lat0:33, lon0:129.5, epsg:6669}, {num:2, lat0:33, lon0:131, epsg:6670}, {num:3, lat0:36, lon0:132.1666667, epsg:6671}, {num:4, lat0:33, lon0:133.5, epsg:6672}, {num:5, lat0:36, lon0:134.3333333, epsg:6673}, {num:6, lat0:36, lon0:136, epsg:6674}, {num:7, lat0:36, lon0:137.1666667, epsg:6675}, {num:8, lat0:36, lon0:138.5, epsg:6676}, {num:9, lat0:36, lon0:139.8333333, epsg:6677}, {num:10, lat0:40, lon0:140.8333333, epsg:6678}, {num:11, lat0:44, lon0:140.25, epsg:6679}, {num:12, lat0:44, lon0:142.25, epsg:6680}, {num:13, lat0:44, lon0:144.25, epsg:6681}, {num:14, lat0:26, lon0:142, epsg:6682}, {num:15, lat0:26, lon0:127.5, epsg:6683}, {num:16, lat0:26, lon0:124, epsg:6684}, {num:17, lat0:26, lon0:131, epsg:6685}, {num:18, lat0:20, lon0:136, epsg:6686}, {num:19, lat0:26, lon0:154, epsg:6687} ];
+        // ▼ 変更点: 基準面のオフセット値を正しい計算式に合うように修正
+        const datumOffsets = [
+            { name: "T.P. (東京湾平均海面)", value: 0, label: "T.P." },
+            { name: "北上川 (K.P.)", value: -0.8745, label: "K.P." },
+            { name: "鳴瀬川 (S.P.)", value: -0.0873, label: "S.P." },
+            { name: "利根川 (Y.P.)", value: -0.8402, label: "Y.P." },
+            { name: "荒川・中川・多摩川 (A.P.)", value: -1.1344, label: "A.P." },
+            { name: "淀川 (O.P.)", value: -1.3000, label: "O.P." },
+            { name: "吉野川 (A.P.)", value: -0.8333, label: "A.P." },
+            { name: "渡川 (T.P.W.)", value: 0.113, label: "T.P.W." },
+            { name: "琵琶湖 (B.S.L.)", value: 84.371, label: "B.S.L." }
+        ];
+        // ▲ 変更点
+
         function parseCSVLine(line) { const result = []; let current = ''; let inQuotes = false; for (let i = 0; i < line.length; i++) { const char = line[i]; if (char === '"' && (i === 0 || line[i-1] !== '\\')) { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; } } else if ((char === ',' || char === '\t') && !inQuotes) { result.push(current.trim().replace(/^"|"$/g, '')); current = ''; } else { current += char; } } result.push(current.trim().replace(/^"|"$/g, '')); return result; }
         function latLonToXY(lat, lon, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [y, x] = proj4('EPSG:4326', `EPSG:${system.epsg}`, [lon, lat]); return { x, y }; }
         function xyToLatLon(x, y, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [lon, lat] = proj4(`EPSG:${system.epsg}`, 'EPSG:4326', [y, x]); return { lat, lon }; }
         function initMap() { const gsiStd = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '© GSI' }); map = L.map('map', { layers: [gsiStd] }).setView([36.2, 139.0], 5); L.control.layers({ "地理院地図": gsiStd, "写真": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg', { attribution: '© GSI' }) }).addTo(map); L.control.scale({ imperial: false }).addTo(map); polylineLayer = L.layerGroup().addTo(map); }
-        function parseGPX(xmlText, fileName) { const parser = new DOMParser(); const xmlDoc = parser.parseFromString(xmlText, 'text/xml'); const wpts = xmlDoc.getElementsByTagName('wpt'); const points = []; for (let i = 0; i < wpts.length; i++) { const wpt = wpts[i]; const getTagText = (p, t) => p.getElementsByTagName(t)[0]?.textContent || null; const d = { id: `${fileName}-gpx-${i}`, name: getTagText(wpt, 'name') || `P${points.length + 1}`, lat: parseFloat(wpt.getAttribute('lat')), lon: parseFloat(wpt.getAttribute('lon')), antennaHeight: parseFloat(getTagText(wpt, 'ele') || 0), time: getTagText(wpt, 'time') || '', cmtText: getTagText(wpt, 'cmt') || '', pointGeoidHeight: parseFloat(getTagText(wpt, 'geoidheight') || 0), geoidSystem: '', fixMode: '', ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {}, isHidden: false }; const extensions = wpt.getElementsByTagName('extensions')[0]; if (extensions) { const measurement = extensions.getElementsByTagName('b:measurement')[0]; if (measurement) { d.geoidSystem = getTagText(measurement, 'b:geoidSystem') || ''; d.fixMode = getTagText(measurement, 'b:fixMode') || ''; } } if (d.cmtText) { const m = d.cmtText.match(/ellipsoidHeight=([\d\.-]+)/); if (m) d.ellipsoidHeight = parseFloat(m[1]); } if (d.ellipsoidHeight !== null && d.pointGeoidHeight !== null) { d.eleDiff = d.antennaHeight - (d.ellipsoidHeight - d.pointGeoidHeight); } points.push(d); } return points; }
-        function processCsvPoints(csvText, fileName, coordSystemId) { const lines = csvText.trim().split(/\r?\n/); const headerLineTest = lines[0].toLowerCase(); const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point'); const dataLines = hasHeader ? lines.slice(1) : lines; const points = []; for (let i = 0; i < dataLines.length; i++) { const values = parseCSVLine(dataLines[i]); if (values.length < 3 || values.some(v => v === '')) continue; const name = values[0]; const val1 = parseFloat(values[1]); const val2 = parseFloat(values[2]); const antennaHeight = values.length > 3 ? parseFloat(values[values.length - 1]) : 0; if (!name || isNaN(val1) || isNaN(val2) || isNaN(antennaHeight)) continue; let lat, lon; if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180) { lat = val1; lon = val2; } else { if (!coordSystemId) { throw new Error("XY座標が検出されましたが、有効な座標系が選択されていません。"); } const easting = val1; const northing = val2; const latLon = xyToLatLon(easting, northing, coordSystemId); lat = latLon.lat; lon = latLon.lon; } if (isNaN(lat) || isNaN(lon)) { console.warn(`行 ${i+1} のデータが無効か、座標系の設定が間違っている可能性があります: ${dataLines[i]}`); continue; } points.push({ id: `${fileName}-csv-${i}`, name: name, lat: lat, lon: lon, antennaHeight: antennaHeight, time: '', cmtText: `(CSV Import)`, pointGeoidHeight: 0, ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {}, isHidden: false }); } return points; }
+        function parseGPX(xmlText, fileName) { const parser = new DOMParser(); const xmlDoc = parser.parseFromString(xmlText, 'text/xml'); const wpts = xmlDoc.getElementsByTagName('wpt'); const points = []; for (let i = 0; i < wpts.length; i++) { const wpt = wpts[i]; const getTagText = (p, t) => p.getElementsByTagName(t)[0]?.textContent || null; const d = { id: `${fileName}-gpx-${i}`, name: getTagText(wpt, 'name') || `P${points.length + 1}`, lat: parseFloat(wpt.getAttribute('lat')), lon: parseFloat(wpt.getAttribute('lon')), antennaHeight: parseFloat(getTagText(wpt, 'ele') || 0), time: getTagText(wpt, 'time') || '', cmtText: getTagText(wpt, 'cmt') || '', pointGeoidHeight: parseFloat(getTagText(wpt, 'geoidheight') || 0), geoidSystem: '', fixMode: '', ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {}, isHidden: false, originalCoordSystemType: '' }; const extensions = wpt.getElementsByTagName('extensions')[0]; if (extensions) { const measurement = extensions.getElementsByTagName('b:measurement')[0]; if (measurement) { d.geoidSystem = getTagText(measurement, 'b:geoidSystem') || ''; d.fixMode = getTagText(measurement, 'b:fixMode') || ''; } const coordTransform = extensions.getElementsByTagName('b:coordinate_transform')[0]; if (coordTransform) { d.originalCoordSystemType = getTagText(coordTransform, 'b:type') || ''; } } if (d.cmtText) { const m = d.cmtText.match(/ellipsoidHeight=([\d\.-]+)/); if (m) d.ellipsoidHeight = parseFloat(m[1]); } if (d.ellipsoidHeight !== null && d.pointGeoidHeight !== null) { d.eleDiff = d.antennaHeight - (d.ellipsoidHeight - d.pointGeoidHeight); } points.push(d); } return points; }
+        function processCsvPoints(csvText, fileName, coordSystemId) { const lines = csvText.trim().split(/\r?\n/); const headerLineTest = lines[0].toLowerCase(); const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point'); const dataLines = hasHeader ? lines.slice(1) : lines; const points = []; for (let i = 0; i < dataLines.length; i++) { const values = parseCSVLine(dataLines[i]); if (values.length < 3 || values.some(v => v === '')) continue; const name = values[0]; const val1 = parseFloat(values[1]); const val2 = parseFloat(values[2]); const antennaHeight = values.length > 3 ? parseFloat(values[values.length - 1]) : 0; if (!name || isNaN(val1) || isNaN(val2) || isNaN(antennaHeight)) continue; let lat, lon; if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180) { lat = val1; lon = val2; } else { if (!coordSystemId) { throw new Error("XY座標が検出されましたが、有効な座標系が選択されていません。"); } const easting = val1; const northing = val2; const latLon = xyToLatLon(easting, northing, coordSystemId); lat = latLon.lat; lon = latLon.lon; } if (isNaN(lat) || isNaN(lon)) { console.warn(`行 ${i+1} のデータが無効か、座標系の設定が間違っている可能性があります: ${dataLines[i]}`); continue; } points.push({ id: `${fileName}-csv-${i}`, name: name, lat: lat, lon: lon, antennaHeight: antennaHeight, time: '', cmtText: `(CSV Import)`, pointGeoidHeight: 0, ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {}, isHidden: false, originalCoordSystemType: '' }); } return points; }
         function showCoordSystemModal(csvContent, fileName) { tempCsvContent = csvContent; tempCsvFileName = fileName; const modal = document.getElementById('coord-modal'); const mainSelect = document.getElementById('coordSystem'); const modalSelect = document.getElementById('modal-coord-system'); modalSelect.innerHTML = mainSelect.innerHTML; modalSelect.value = mainSelect.value; modal.style.display = 'flex'; }
         function parseCSV(csvText, fileName) { const lines = csvText.trim().split(/\r?\n/); if (lines.length === 0 || (lines.length === 1 && lines[0].trim() === '')) throw new Error("データが空です。"); const headerLineTest = lines[0].toLowerCase(); const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point'); const lineToCheck = hasHeader && lines.length > 1 ? lines[1] : lines[0]; if (!lineToCheck) { throw new Error("データ行が見つかりません。"); } const valuesToCheck = parseCSVLine(lineToCheck); if (valuesToCheck.length < 3) throw new Error("データは少なくとも3列（測点名, X/緯度, Y/経度）必要です。"); const val1 = parseFloat(valuesToCheck[1]); const val2 = parseFloat(valuesToCheck[2]); const isLatLon = !isNaN(val1) && !isNaN(val2) && Math.abs(val1) <= 90 && Math.abs(val2) <= 180; if (isLatLon) { const coordSystemId = document.getElementById('coordSystem').value; return processCsvPoints(csvText, fileName, coordSystemId); } else { showCoordSystemModal(csvText, fileName); return null; } }
         function processFiles(files) { Array.from(files).forEach(file => { const reader = new FileReader(); const fileType = file.name.toLowerCase().endsWith('.gpx') ? 'gpx' : (file.name.toLowerCase().endsWith('.csv') || file.name.toLowerCase().endsWith('.txt') ? 'csv' : null); if (!fileType) return; reader.onload = (e) => { try { const content = e.target.result; let points = []; if (fileType === 'gpx') { points = parseGPX(content, file.name); if(points.length === 0) { alert(`ファイル「${file.name}」に測点(<wpt>)がありません。`); return; } } else { points = parseCSV(content, file.name); if (points === null) return; if(points.length === 0) { alert(`ファイル「${file.name}」から有効な測点を読み込めませんでした。`); return; } } loadedFiles[file.name] = { points, visible: true, color: COLORS[Object.keys(loadedFiles).length % COLORS.length], gpxContent: fileType === 'gpx' ? content : null }; updateFileListUI(); updateUI(); } catch (err) { alert(`ファイル解析エラー (${file.name}): ${err.message}`); } }; reader.readAsText(file); }); }
@@ -612,14 +634,13 @@
                 document.getElementById('tableContainer').innerHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">GPX/CSVファイルをインポート、またはプロジェクトファイルを読み込んでください</div>`;
             }
         }
-        function displayTable(points, highlightPointId) { let tableHTML = `<table><thead><tr><th><span title="ドラッグで並べ替え">&#x2195;</span></th><th></th><th class="mobile-hidden-col">ファイル名</th><th title="ダブルクリックで編集">測点名</th><th class="mobile-hidden-col">測定日時</th><th>緯度</th><th>経度</th><th>X (m)</th><th>Y (m)</th><th title="ダブルクリックで編集">アンテナ高</th><th>補正後標高</th></tr></thead><tbody>`; if (points.length === 0) { tableHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">表示する測点がありません</div>`; } else { const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); points.forEach(p => { const highlightClass = p.id === highlightPointId ? 'highlighted' : ''; const hiddenClass = p.isHidden ? 'hidden-row' : ''; const nameModifiedClass = p.modifiedFields?.name ? 'modified-cell' : ''; const antennaHeightModifiedClass = p.modifiedFields?.antennaHeight ? 'modified-cell' : ''; const inSectionClass = pointsInLastSectionIds.includes(p.id) ? 'in-section' : ''; const coords = latLonToXY(p.lat, p.lon, sys); const correctedEle = p.antennaHeight - pole; tableHTML += `<tr data-id="${p.id}" class="${highlightClass} ${inSectionClass} ${hiddenClass}"> <td class="drag-handle">&#x2195;</td><td><span class="visibility-toggle" title="表示/非表示" onclick="togglePointVisibility('${p.id}')">${p.isHidden ? '🙈' : '👁️'}</span></td><td class="mobile-hidden-col">${p.fileName}</td> <td class="editable-cell ${nameModifiedClass}" data-field="name"><strong>${p.name}</strong></td> <td class="mobile-hidden-col">${p.time ? new Date(p.time).toLocaleString('ja-JP', { hour12: false }).replace(/\//g, '-') : 'N/A'}</td> <td>${p.lat.toFixed(9)}</td><td>${p.lon.toFixed(9)}</td><td>${coords.x.toFixed(3)}</td><td>${coords.y.toFixed(3)}</td> <td class="editable-cell ${antennaHeightModifiedClass}" data-field="antennaHeight"><strong>${p.antennaHeight.toFixed(3)}</strong></td> <td>${correctedEle.toFixed(3)}</td></tr>`; }); tableHTML += `</tbody></table>`; } document.getElementById('tableContainer').innerHTML = tableHTML; const tbody = document.querySelector("#tableContainer tbody"); if (tbody) { if (sortableInstance) sortableInstance.destroy(); sortableInstance = Sortable.create(tbody, { handle: '.drag-handle', animation: 150, onEnd: (evt) => { const item = activePoints.splice(evt.oldIndex, 1)[0]; activePoints.splice(evt.newIndex, 0, item); rerenderUI(); } }); } }
+        function displayTable(points, highlightPointId) { const datumSelect = document.getElementById('datum-select'); const selectedDatumOffset = parseFloat(datumSelect.value); const selectedDatumLabel = datumSelect.options[datumSelect.selectedIndex].text.match(/\((.*?)\)/)?.[1] || '換算'; let tableHTML = `<table><thead><tr><th><span title="ドラッグで並べ替え">&#x2195;</span></th><th></th><th class="mobile-hidden-col">ファイル名</th><th title="ダブルクリックで編集">測点名</th><th class="mobile-hidden-col">測定日時</th><th>緯度</th><th>経度</th><th>X (m)</th><th>Y (m)</th><th title="ダブルクリックで編集">アンテナ高</th><th>補正後標高 (T.P.)</th><th>換算標高 (${selectedDatumLabel})</th></tr></thead><tbody>`; if (points.length === 0) { tableHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">表示する測点がありません</div>`; } else { const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); points.forEach(p => { const highlightClass = p.id === highlightPointId ? 'highlighted' : ''; const hiddenClass = p.isHidden ? 'hidden-row' : ''; const nameModifiedClass = p.modifiedFields?.name ? 'modified-cell' : ''; const antennaHeightModifiedClass = p.modifiedFields?.antennaHeight ? 'modified-cell' : ''; const inSectionClass = pointsInLastSectionIds.includes(p.id) ? 'in-section' : ''; const coords = latLonToXY(p.lat, p.lon, sys); const correctedEle = p.antennaHeight - pole; const convertedDatumElevation = correctedEle - selectedDatumOffset; tableHTML += `<tr data-id="${p.id}" class="${highlightClass} ${inSectionClass} ${hiddenClass}"> <td class="drag-handle">&#x2195;</td><td><span class="visibility-toggle" title="表示/非表示" onclick="togglePointVisibility('${p.id}')">${p.isHidden ? '🙈' : '👁️'}</span></td><td class="mobile-hidden-col">${p.fileName}</td> <td class="editable-cell ${nameModifiedClass}" data-field="name"><strong>${p.name}</strong></td> <td class="mobile-hidden-col">${p.time ? new Date(p.time).toLocaleString('ja-JP', { hour12: false }).replace(/\//g, '-') : 'N/A'}</td> <td>${p.lat.toFixed(9)}</td><td>${p.lon.toFixed(9)}</td><td>${coords.x.toFixed(3)}</td><td>${coords.y.toFixed(3)}</td> <td class="editable-cell ${antennaHeightModifiedClass}" data-field="antennaHeight"><strong>${p.antennaHeight.toFixed(3)}</strong></td> <td>${correctedEle.toFixed(3)}</td><td>${convertedDatumElevation.toFixed(3)}</td></tr>`; }); tableHTML += `</tbody></table>`; } document.getElementById('tableContainer').innerHTML = tableHTML; const tbody = document.querySelector("#tableContainer tbody"); if (tbody) { if (sortableInstance) sortableInstance.destroy(); sortableInstance = Sortable.create(tbody, { handle: '.drag-handle', animation: 150, onEnd: (evt) => { const item = activePoints.splice(evt.oldIndex, 1)[0]; activePoints.splice(evt.newIndex, 0, item); rerenderUI(); } }); } }
         Chart.register(window.ChartZoom);
         const xyPlotAspectRatioPlugin = { id: 'xyPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('aspectRatioToggle').checked) return; const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
         const xzPlotAspectRatioPlugin = { id: 'xzPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('xzAspectRatioToggle').checked) return; const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
         const yzPlotAspectRatioPlugin = { id: 'yzPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('yzAspectRatioToggle').checked) return; const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
         const scaleBarPlugin = { id: 'scaleBar', afterDraw: (chart) => { const ctx = chart.ctx; const xAxis = chart.scales.x; const chartArea = chart.chartArea; if (!xAxis || xAxis.min === undefined || xAxis.max === undefined || !chartArea) return; const maxPixelWidth = 100; const viewableRange = xAxis.max - xAxis.min; const maxRealWorldDistance = viewableRange * (maxPixelWidth / xAxis.width); if (maxRealWorldDistance <= 0) return; const magnitude = Math.pow(10, Math.floor(Math.log10(maxRealWorldDistance))); const possibleSteps = [magnitude, magnitude / 2, magnitude / 5, magnitude / 10, magnitude / 20, magnitude / 50, magnitude/100]; const niceDistance = possibleSteps.find(step => (step / viewableRange) * xAxis.width > 20) || possibleSteps[possibleSteps.length - 1]; const scalePixelWidth = (niceDistance / viewableRange) * xAxis.width; const xPos = chartArea.left + 20; const yPos = chartArea.bottom - 20; let label; if (niceDistance >= 1) { label = `${niceDistance.toFixed(0)} m`; } else if (niceDistance >= 0.01) { label = `${(niceDistance * 100).toFixed(0)} cm`; } else { label = `${(niceDistance * 1000).toFixed(0)} mm`; } ctx.save(); ctx.strokeStyle = '#333'; ctx.fillStyle = '#333'; ctx.lineWidth = 2; ctx.font = '12px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.beginPath(); ctx.moveTo(xPos, yPos); ctx.lineTo(xPos + scalePixelWidth, yPos); ctx.moveTo(xPos, yPos - 5); ctx.lineTo(xPos, yPos + 5); ctx.moveTo(xPos + scalePixelWidth, yPos - 5); ctx.lineTo(xPos + scalePixelWidth, yPos + 5); ctx.stroke(); ctx.fillText(label, xPos + scalePixelWidth / 2, yPos - 8); ctx.restore(); } };
         
-        // グラフホバー時に統計テーブルをハイライトする共通関数
         const highlightStatsTableRowOnHover = (event, elements, chart) => {
             const statsTableRows = document.querySelectorAll('#stats-modal-body tr');
             statsTableRows.forEach(row => row.classList.remove('highlighted'));
@@ -638,9 +659,9 @@
             }
         };
 
-        function displayXYPlot(points, highlightPointId) { const ctx = document.getElementById('xyPlot'); if (points.length === 0 && !lastClusterResults) { if (chartInstance) { chartInstance.destroy(); chartInstance = null; } return; } const datasets = {}, lineDatasets = {}; points.forEach((p, index) => { if (!datasets[p.fileName]) { datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] }; lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName]?.color || '#000', borderWidth: 1, pointRadius: 0, showInLegend: false }; } datasets[p.fileName].data.push({ x: p.y, y: p.x }); if (p.id === highlightPointId) { datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2); } else if (pointsInLastSectionIds.includes(p.id)) { datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1); } else { datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName]?.color + 'B3' || '#000000B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName]?.color || '#000'); datasets[p.fileName].borderWidth.push(1); } datasets[p.fileName].originalIndices.push(index); lineDatasets[p.fileName].data.push({ x: p.y, y: p.x }); }); let finalDatasets = document.getElementById('toggleLineOnPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets); if(lastClusterResults) { const avgDataset = { type: 'scatter', label: '平均値', data: lastClusterResults.map(r => ({x: r.meanY, y: r.meanX})), pointStyle: 'circle', radius: 8, hoverRadius: 12, backgroundColor: lastClusterResults.map(r => r.color), borderColor: lastClusterResults.map(r => r.color), borderWidth: 2 }; finalDatasets.push(avgDataset); } const annotations = {}; if (isSectionLineDefined && lastDefinedSectionLinePoints) { const line = lastDefinedSectionLinePoints; const p1 = line[0]; const p2 = line[line.length - 1]; annotations.sectionLine = { type: 'line', xMin: p1.x, yMin: p1.y, xMax: p2.x, yMax: p2.y, borderColor: 'red', borderWidth: 2 }; } if (chartInstance) { chartInstance.data.datasets = finalDatasets; chartInstance.options.plugins.annotation.annotations = annotations; chartInstance.update(); } else { chartInstance = new Chart(ctx, { data: { datasets: finalDatasets }, plugins: [xyPlotAspectRatioPlugin, scaleBarPlugin], options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: 'X座標 (m)' } } }, onHover: (event, elements) => highlightStatsTableRowOnHover(event, elements, chartInstance), plugins: { annotation: { annotations }, tooltip: { callbacks: { label: (ctx) => { if (ctx.dataset.label === '平均値') return `${lastClusterResults[ctx.dataIndex].groupId}: (Y=${ctx.parsed.x.toFixed(4)}, X=${ctx.parsed.y.toFixed(4)})`; const pointIndex = Object.values(datasets).find(ds => ds.label === ctx.dataset.label).originalIndices[ctx.dataIndex]; return `${activePoints[pointIndex].name}: (Y=${ctx.parsed.x.toFixed(3)}, X=${ctx.parsed.y.toFixed(3)})`; }}}, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy', onZoomStart: ({chart}) => { const t = document.getElementById('aspectRatioToggle'); wasXyAspectRatioChecked = t.checked; if (wasXyAspectRatioChecked) { t.checked = false; chart.update('none'); } }, onZoomComplete: ({chart}) => { if (wasXyAspectRatioChecked) { const t = document.getElementById('aspectRatioToggle'); t.checked = true; chart.update('none'); } wasXyAspectRatioChecked = false; } }, pan: { enabled: true, mode: 'xy' } } }, onClick: (evt) => { if (chartInstance.isZoomedOrPanned() && evt.native.detail === 2) { chartInstance.resetZoom(); return; } handlePlotClick(evt); }, } }); } }
+        function displayXYPlot(points, highlightPointId) { const ctx = document.getElementById('xyPlot'); if (points.length === 0 && !lastClusterResults) { if (chartInstance) { chartInstance.destroy(); chartInstance = null; } return; } const datasets = {}, lineDatasets = {}; points.forEach((p, index) => { if (!datasets[p.fileName]) { datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] }; lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName]?.color || '#000', borderWidth: 1, pointRadius: 0, showInLegend: false }; } datasets[p.fileName].data.push({ x: p.y, y: p.x }); if (p.id === highlightPointId) { datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2); } else if (p.id === sectionLinePoint1_ID) { datasets[p.fileName].pointRadius.push(8); datasets[p.fileName].backgroundColor.push('#f39c12'); datasets[p.fileName].borderColor.push('#e67e22'); datasets[p.fileName].borderWidth.push(2); } else if (pointsInLastSectionIds.includes(p.id)) { datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1); } else { datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName]?.color + 'B3' || '#000000B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName]?.color || '#000'); datasets[p.fileName].borderWidth.push(1); } datasets[p.fileName].originalIndices.push(index); lineDatasets[p.fileName].data.push({ x: p.y, y: p.x }); }); let finalDatasets = document.getElementById('toggleLineOnPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets); if(lastClusterResults) { const avgDataset = { type: 'scatter', label: '平均値', data: lastClusterResults.map(r => ({x: r.meanY, y: r.meanX})), pointStyle: 'circle', radius: 8, hoverRadius: 12, backgroundColor: lastClusterResults.map(r => r.color), borderColor: lastClusterResults.map(r => r.color), borderWidth: 2 }; finalDatasets.push(avgDataset); } const annotations = {}; if (isSectionLineDefined && lastDefinedSectionLinePoints) { const line = lastDefinedSectionLinePoints; const p1 = line[0]; const p2 = line[line.length - 1]; annotations.sectionLine = { type: 'line', xMin: p1.x, yMin: p1.y, xMax: p2.x, yMax: p2.y, borderColor: 'red', borderWidth: 2 }; } if (chartInstance) { chartInstance.data.datasets = finalDatasets; chartInstance.options.plugins.annotation.annotations = annotations; chartInstance.update(); } else { chartInstance = new Chart(ctx, { data: { datasets: finalDatasets }, plugins: [xyPlotAspectRatioPlugin, scaleBarPlugin], options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: 'X座標 (m)' } } }, onHover: (event, elements) => highlightStatsTableRowOnHover(event, elements, chartInstance), plugins: { annotation: { annotations }, tooltip: { callbacks: { label: (ctx) => { if (ctx.dataset.label === '平均値') return `${lastClusterResults[ctx.dataIndex].groupId}: (Y=${ctx.parsed.x.toFixed(4)}, X=${ctx.parsed.y.toFixed(4)})`; const pointIndex = Object.values(datasets).find(ds => ds.label === ctx.dataset.label).originalIndices[ctx.dataIndex]; return `${activePoints[pointIndex].name}: (Y=${ctx.parsed.x.toFixed(3)}, X=${ctx.parsed.y.toFixed(3)})`; }}}, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy', onZoomStart: ({chart}) => { const t = document.getElementById('aspectRatioToggle'); wasXyAspectRatioChecked = t.checked; if (wasXyAspectRatioChecked) { t.checked = false; chart.update('none'); } }, onZoomComplete: ({chart}) => { if (wasXyAspectRatioChecked) { const t = document.getElementById('aspectRatioToggle'); t.checked = true; chart.update('none'); } wasXyAspectRatioChecked = false; } }, pan: { enabled: true, mode: 'xy' } } }, onClick: (evt) => { if (chartInstance.isZoomedOrPanned() && evt.native.detail === 2) { chartInstance.resetZoom(); return; } handlePlotClick(evt); }, } }); } }
         function displayXZPlot(points, highlightPointId) { const ctx = document.getElementById('xzPlot'); if (points.length === 0 && !lastClusterResults) { if (xzChartInstance) { xzChartInstance.destroy(); xzChartInstance = null; } return; } const datasets = {}, lineDatasets = {}; points.forEach((p, index) => { if (!datasets[p.fileName]) { datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] }; lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName]?.color || '#000', borderWidth: 1, pointRadius: 0, showInLegend: false }; } datasets[p.fileName].data.push({ x: p.x, y: p.correctedEle }); lineDatasets[p.fileName].data.push({ x: p.x, y: p.correctedEle }); if (p.id === highlightPointId) { datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2); } else if (pointsInLastSectionIds.includes(p.id)) { datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1); } else { datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName]?.color + 'B3' || '#000000B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName]?.color || '#000'); datasets[p.fileName].borderWidth.push(1); } datasets[p.fileName].originalIndices.push(index); }); let finalDatasets = document.getElementById('toggleLineOnXzPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets); if(lastClusterResults) { const avgDataset = { type: 'scatter', label: '平均値', data: lastClusterResults.map(r => ({x: r.meanX, y: r.meanEle})), pointStyle: 'circle', radius: 8, hoverRadius: 12, backgroundColor: lastClusterResults.map(r => r.color), borderColor: lastClusterResults.map(r => r.color), borderWidth: 2 }; finalDatasets.push(avgDataset); } if (xzChartInstance) { xzChartInstance.data.datasets = finalDatasets; xzChartInstance.update(); } else { xzChartInstance = new Chart(ctx, { data: { datasets: finalDatasets }, plugins: [xzPlotAspectRatioPlugin, scaleBarPlugin], options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'X座標 (m)' } }, y: { title: { display: true, text: '補正後標高 (m)' } } }, onHover: (event, elements) => highlightStatsTableRowOnHover(event, elements, xzChartInstance), plugins: { tooltip: { callbacks: { label: (ctx) => { if (ctx.dataset.label === '平均値') return `${lastClusterResults[ctx.dataIndex].groupId}: (X=${ctx.parsed.x.toFixed(4)}, Z=${ctx.parsed.y.toFixed(4)})`; const pointIndex = Object.values(datasets).find(ds => ds.label === ctx.dataset.label).originalIndices[ctx.dataIndex]; return `${activePoints[pointIndex].name}: (X=${ctx.parsed.x.toFixed(3)}, Z=${ctx.parsed.y.toFixed(3)})`; }}}, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy', onZoomStart: ({chart}) => { const t = document.getElementById('xzAspectRatioToggle'); wasXzAspectRatioChecked = t.checked; if(wasXzAspectRatioChecked) { t.checked = false; chart.update('none'); } }, onZoomComplete: ({chart}) => { if (wasXzAspectRatioChecked) { const t = document.getElementById('xzAspectRatioToggle'); t.checked = true; chart.update('none'); } wasXzAspectRatioChecked = false; } }, pan: { enabled: true, mode: 'xy' } } }, onClick: (evt) => { if (isSectionMode) return; if (xzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { xzChartInstance.resetZoom(); return; } const elems = xzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true).filter(e => xzChartInstance.data.datasets[e.datasetIndex].label !== '平均値'); if (elems.length > 0) { const elem = elems[0]; const ds = xzChartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } }, } }); } }
-        function displayYZPlot(points, highlightPointId) { const ctx = document.getElementById('yzPlot'); if (points.length === 0 && !lastClusterResults) { if (yzChartInstance) { yzChartInstance.destroy(); yzChartInstance = null; } return; } const datasets = {}, lineDatasets = {}; points.forEach((p, index) => { if (!datasets[p.fileName]) { datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] }; lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName]?.color || '#000', borderWidth: 1, pointRadius: 0, showInLegend: false }; } datasets[p.fileName].data.push({ x: p.y, y: p.correctedEle }); lineDatasets[p.fileName].data.push({ x: p.y, y: p.correctedEle }); if (p.id === highlightPointId) { datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2); } else if (pointsInLastSectionIds.includes(p.id)) { datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1); } else { datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName]?.color + 'B3' || '#000000B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName]?.color || '#000'); datasets[p.fileName].borderWidth.push(1); } datasets[p.fileName].originalIndices.push(index); }); let finalDatasets = document.getElementById('toggleLineOnYzPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets); if(lastClusterResults) { const avgDataset = { type: 'scatter', label: '平均値', data: lastClusterResults.map(r => ({x: r.meanY, y: r.meanEle})), pointStyle: 'circle', radius: 8, hoverRadius: 12, backgroundColor: lastClusterResults.map(r => r.color), borderColor: lastClusterResults.map(r => r.color), borderWidth: 2 }; finalDatasets.push(avgDataset); } if (yzChartInstance) { yzChartInstance.data.datasets = finalDatasets; yzChartInstance.update(); } else { yzChartInstance = new Chart(ctx, { data: { datasets: finalDatasets }, plugins: [yzPlotAspectRatioPlugin, scaleBarPlugin], options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: '補正後標高 (m)' } } }, onHover: (event, elements) => highlightStatsTableRowOnHover(event, elements, yzChartInstance), plugins: { tooltip: { callbacks: { label: (ctx) => { if (ctx.dataset.label === '平均値') return `${lastClusterResults[ctx.dataIndex].groupId}: (Y=${ctx.parsed.x.toFixed(4)}, Z=${ctx.parsed.y.toFixed(4)})`; const pointIndex = Object.values(datasets).find(ds => ds.label === ctx.dataset.label).originalIndices[ctx.dataIndex]; return `${activePoints[pointIndex].name}: (Y=${ctx.parsed.x.toFixed(3)}, Z=${ctx.parsed.y.toFixed(3)})`; }}}, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy', onZoomStart: ({chart}) => { const t = document.getElementById('yzAspectRatioToggle'); wasYzAspectRatioChecked = t.checked; if(wasYzAspectRatioChecked) { t.checked = false; chart.update('none'); } }, onZoomComplete: ({chart}) => { if (wasYzAspectRatioChecked) { const t = document.getElementById('yzAspectRatioToggle'); t.checked = true; chart.update('none'); } wasYzAspectRatioChecked = false; } }, pan: { enabled: true, mode: 'xy' } } }, onClick: (evt) => { if (isSectionMode) return; if (yzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { yzChartInstance.resetZoom(); return; } const elems = yzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true).filter(e => yzChartInstance.data.datasets[e.datasetIndex].label !== '平均値'); if (elems.length > 0) { const elem = elems[0]; const ds = yzChartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } }, } }); } }
+        function displayYZPlot(points, highlightPointId) { const ctx = document.getElementById('yzPlot'); if (points.length === 0 && !lastClusterResults) { if (yzChartInstance) { yzChartInstance.destroy(); yzChartInstance = null; } return; } const datasets = {}, lineDatasets = {}; points.forEach((p, index) => { if (!datasets[p.fileName]) { datasets[p.fileName] = { type: 'scatter', label: p.fileName, data: [], pointRadius: [], pointHoverRadius: 8, backgroundColor: [], borderColor: [], borderWidth: [], originalIndices: [] }; lineDatasets[p.fileName] = { type: 'line', label: p.fileName + '-line', data: [], borderColor: loadedFiles[p.fileName]?.color || '#000', borderWidth: 1, pointRadius: 0, showInLegend: false }; } datasets[p.fileName].data.push({ x: p.y, y: p.correctedEle }); lineDatasets[p.fileName].data.push({ x: p.y, y: p.correctedEle }); if (p.id === highlightPointId) { datasets[p.fileName].pointRadius.push(10); datasets[p.fileName].backgroundColor.push('#ff0000'); datasets[p.fileName].borderColor.push('#000000'); datasets[p.fileName].borderWidth.push(2); } else if (pointsInLastSectionIds.includes(p.id)) { datasets[p.fileName].pointRadius.push(6); datasets[p.fileName].backgroundColor.push('#c79fef'); datasets[p.fileName].borderColor.push('#5d3d7e'); datasets[p.fileName].borderWidth.push(1); } else { datasets[p.fileName].pointRadius.push(5); datasets[p.fileName].backgroundColor.push(loadedFiles[p.fileName]?.color + 'B3' || '#000000B3'); datasets[p.fileName].borderColor.push(loadedFiles[p.fileName]?.color || '#000'); datasets[p.fileName].borderWidth.push(1); } datasets[p.fileName].originalIndices.push(index); }); let finalDatasets = document.getElementById('toggleLineOnYzPlot').checked ? [...Object.values(datasets), ...Object.values(lineDatasets)] : Object.values(datasets); if(lastClusterResults) { const avgDataset = { type: 'scatter', label: '平均値', data: lastClusterResults.map(r => ({x: r.meanY, y: r.meanEle})), pointStyle: 'circle', radius: 8, hoverRadius: 12, backgroundColor: lastClusterResults.map(r => r.color), borderColor: lastClusterResults.map(r => r.color), borderWidth: 2 }; finalDatasets.push(avgDataset); } if (yzChartInstance) { yzChartInstance.data.datasets = finalDatasets; yzChartInstance.update(); } else { yzChartInstance = new Chart(ctx, { data: { datasets: finalDatasets }, plugins: [yzPlotAspectRatioPlugin, scaleBarPlugin], options: { animation: false, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Y座標 (m)' } }, y: { title: { display: true, text: '補正後標高 (m)' } } }, onHover: (event, elements) => highlightStatsTableRowOnHover(event, elements, yzChartInstance), plugins: { tooltip: { callbacks: { label: (ctx) => { if (ctx.dataset.label === '平均値') return `${lastClusterResults[ctx.dataIndex].groupId}: (Y=${ctx.parsed.x.toFixed(4)}, Z=${ctx.parsed.y.toFixed(4)})`; const pointIndex = Object.values(datasets).find(ds => ds.label === ctx.dataset.label).originalIndices[ctx.dataIndex]; return `${activePoints[pointIndex].name}: (Y=${ctx.parsed.x.toFixed(3)}, Z=${ctx.parsed.y.toFixed(3)})`; }}}, zoom: { zoom: { wheel: { enabled: true }, mode: 'xy', onZoomStart: ({chart}) => { const t = document.getElementById('yzAspectRatioToggle'); wasYzAspectRatioChecked = t.checked; if(wasYzAspectRatioChecked) { t.checked = false; chart.update('none'); } }, onZoomComplete: ({chart}) => { if (wasYzAspectRatioChecked) { const t = document.getElementById('yzAspectRatioToggle'); t.checked = true; chart.update('none'); } wasYzAspectRatioChecked = false; } }, pan: { enabled: true, mode: 'xy' } } }, onClick: (evt) => { if (isSectionMode) return; if (yzChartInstance.isZoomedOrPanned() && evt.native.detail === 2) { yzChartInstance.resetZoom(); return; } const elems = yzChartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true).filter(e => yzChartInstance.data.datasets[e.datasetIndex].label !== '平均値'); if (elems.length > 0) { const elem = elems[0]; const ds = yzChartInstance.data.datasets[elem.index]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } }, } }); } }
         function addMarkersAndLine(points) { polylineLayer.clearLayers(); if (mapSectionLine) polylineLayer.addLayer(mapSectionLine); const allBounds = []; const pointsByFile = {}; points.forEach(p => { const popupContent = `<strong>${p.name}</strong><br>標高: ${p.correctedEle.toFixed(3)}m<br><button class="action-button" onclick="togglePointVisibility('${p.id}')">この点を非表示</button>`; const marker = L.marker([p.lat, p.lon]).bindPopup(popupContent); polylineLayer.addLayer(marker); p.marker = marker; allBounds.push([p.lat, p.lon]); if (!pointsByFile[p.fileName]) pointsByFile[p.fileName] = []; pointsByFile[p.fileName].push(p); }); for (const f in pointsByFile) { if (pointsByFile[f].length > 1) { const latlngs = pointsByFile[f].map(p => [p.lat, p.lon]); polylineLayer.addLayer(L.polyline(latlngs, { color: loadedFiles[f]?.color || '#000', weight: 2 })); } } if (allBounds.length > 0 && !isSectionMode) map.fitBounds(allBounds, { padding: [50, 50] }); }
         
         function display3DPlot(points, highlightPointId) {
@@ -673,7 +694,7 @@
                 }
             };
 
-const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle').checked;
+            const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle').checked;
 
             const layout = {
                 title: '3D測点プロット',
@@ -693,13 +714,140 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
         window.focusOnPoint = (event, pointId) => { if (!pointId || (event && event.target.tagName.toLowerCase() === 'input')) return; if (window.getSelection().toString()) return; let masterPoint = null; for (const f in loadedFiles) { const p = loadedFiles[f].points.find(pt => pt.id === pointId); if (p) { masterPoint = p; break; } } if (!masterPoint) return; rerenderUI(pointId); if (!masterPoint.isHidden) { const point = activePoints.find(p => p.id === pointId); if (point?.marker) { point.marker.openPopup(); map.setView(point.marker.getLatLng(), 18); } } const row = document.querySelector(`tr[data-id="${pointId}"]`); if (row) { const tableContainer = document.getElementById('tableContainer'); const containerRect = tableContainer.getBoundingClientRect(); const rowRect = row.getBoundingClientRect(); if (rowRect.top < containerRect.top || rowRect.bottom > containerRect.bottom) { const desiredScrollTop = tableContainer.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2); tableContainer.scrollTo({ top: desiredScrollTop, behavior: 'auto' }); } } };
         function handleTableCellEdit(e) { const cell = e.target.closest('.editable-cell'); if (!cell || cell.querySelector('input')) return; const originalText = cell.querySelector('strong')?.textContent || cell.textContent; const field = cell.dataset.field; const pointId = cell.parentElement.dataset.id; cell.innerHTML = `<input type="text" value="${originalText.trim()}" />`; const input = cell.querySelector('input'); input.focus(); input.select(); const save = () => { let masterPoint = null; for(const f in loadedFiles){ const p = loadedFiles[f].points.find(pt => pt.id === pointId); if(p) { masterPoint = p; break; } } if (!masterPoint) return; const newValue = input.value; let changed = false; if (field === 'antennaHeight') { const num = parseFloat(newValue); if (!isNaN(num) && masterPoint.antennaHeight.toFixed(3) !== num.toFixed(3)) { masterPoint.antennaHeight = num; changed = true; } } else { if (masterPoint.name !== newValue) { masterPoint.name = newValue; changed = true; } } if (changed) { masterPoint.modifiedFields[field] = true; } updateUI(); rerenderUI(pointId); }; input.addEventListener('blur', save); input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { input.removeEventListener('blur', save); rerenderUI(pointId); } }); }
         function updateFileListUI() { const panel = document.getElementById('file-list-panel'); document.getElementById('file-list-panel-container').style.display = Object.keys(loadedFiles).length > 0 ? 'block' : 'none'; panel.innerHTML = ''; for (const f in loadedFiles) { const item = document.createElement('div'); item.className = 'file-item'; item.innerHTML = `<input type="checkbox" id="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" ${loadedFiles[f].visible?'checked':''}> <label for="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" title="${f}">${f}</label> <button class="delete-btn" title="削除">&times;</button>`; panel.appendChild(item); item.querySelector('input').addEventListener('change', (e) => { loadedFiles[f].visible = e.target.checked; updateUI(); }); item.querySelector('button').addEventListener('click', () => { delete loadedFiles[f]; updateFileListUI(); updateUI(); }); } }
-        function toggleSectionLineMode() { isSectionMode = !isSectionMode; const btn = document.getElementById('section-line-btn'); const status = document.getElementById('section-status'); const canvas = document.getElementById('xyPlot'); const createBtn = document.getElementById('create-section-profile-btn'); btn.classList.toggle('active', isSectionMode); sectionLineStart = null; isSectionLineDefined = false; lastDefinedSectionLinePoints = null; createBtn.disabled = true; canvas.classList.remove('crosshair', 'editable-section'); if (isSectionMode) { const mode = document.getElementById('section-mode-select').value; if (mode === 'coords') { document.getElementById('section-by-coords-modal').style.display = 'flex'; return; } const aspectRatioToggle = document.getElementById('aspectRatioToggle'); if (aspectRatioToggle.checked) { aspectRatioToggle.checked = false; aspectRatioToggle.dispatchEvent(new Event('change')); } status.style.display = 'inline'; canvas.classList.add('crosshair'); switch(mode) { case '2-point': status.textContent = 'ドラッグして断面線を設定'; break; case 'vertical': status.textContent = 'クリックして鉛直線の位置を決定'; break; case 'horizontal': status.textContent = 'クリックして水平線の位置を決定'; break; } } else { status.style.display = 'none'; pointsInLastSectionIds = []; } rerenderUI(); }
+        // ▼ 変更点: 断面線作成モードの切り替え関数を修正
+        function toggleSectionLineMode() { 
+            isSectionMode = !isSectionMode; 
+            const btn = document.getElementById('section-line-btn');
+            const status = document.getElementById('section-status');
+            const canvas = document.getElementById('xyPlot');
+            const createBtn = document.getElementById('create-section-profile-btn');
+            
+            // 状態をリセット
+            isSelectingSectionPoints = false;
+            sectionLinePoint1_ID = null;
+            sectionLinePoint1_Coords = null;
+            sectionLineStart = null; 
+            isSectionLineDefined = false; 
+            lastDefinedSectionLinePoints = null; 
+            
+            btn.classList.toggle('active', isSectionMode);
+            createBtn.disabled = true; 
+            canvas.classList.remove('crosshair', 'editable-section'); 
+            
+            if (isSectionMode) { 
+                const mode = document.getElementById('section-mode-select').value; 
+                if (mode === 'coords') { 
+                    document.getElementById('section-by-coords-modal').style.display = 'flex'; 
+                    return; 
+                } 
+                const aspectRatioToggle = document.getElementById('aspectRatioToggle'); 
+                if (aspectRatioToggle.checked) { 
+                    aspectRatioToggle.checked = false; 
+                    aspectRatioToggle.dispatchEvent(new Event('change')); 
+                } 
+                status.style.display = 'inline'; 
+                canvas.classList.add('crosshair'); 
+                switch(mode) { 
+                    case '2-point': status.textContent = 'ドラッグして断面線を設定'; break; 
+                    case 'vertical': status.textContent = 'クリックして鉛直線の位置を決定'; break; 
+                    case 'horizontal': status.textContent = 'クリックして水平線の位置を決定'; break; 
+                    case 'point-select': 
+                        isSelectingSectionPoints = true; 
+                        status.textContent = '1点目の測点をクリックしてください'; 
+                        break; 
+                } 
+            } else { 
+                status.style.display = 'none'; 
+                pointsInLastSectionIds = []; 
+            } 
+            rerenderUI(); 
+        }
+        // ▲ 変更点
         function getChartCoordsFromClick(e) { if (!chartInstance) return null; return { x: chartInstance.scales.x.getValueForPixel(e.x), y: chartInstance.scales.y.getValueForPixel(e.y) }; }
         function getChartCoordsFromCanvasEvent(e) { if (!chartInstance) return null; let clientX, clientY; const eventType = e.type; if (eventType.startsWith('touch')) { e.preventDefault(); const touch = (eventType === 'touchend' || eventType === 'touchcancel') ? e.changedTouches[0] : e.touches[0]; if (!touch) return null; clientX = touch.clientX; clientY = touch.clientY; } else { clientX = e.clientX; clientY = e.clientY; } const rect = e.target.getBoundingClientRect(); const offsetX = clientX - rect.left; const offsetY = clientY - rect.top; return { x: chartInstance.scales.x.getValueForPixel(offsetX), y: chartInstance.scales.y.getValueForPixel(offsetY) }; }
         function handlePlotDrawStart(e) { if (!isSectionMode || isSectionLineDefined || document.getElementById('section-mode-select').value !== '2-point') return; isDrawingSectionLine = true; sectionLineStart = getChartCoordsFromCanvasEvent(e); }
         function handlePlotDrawMove(e) { if (!sectionLineStart || !isDrawingSectionLine) return; const current = getChartCoordsFromCanvasEvent(e); if (current) { const annotations = chartInstance.options.plugins.annotation.annotations; if (!annotations.tempLine) { annotations.tempLine = { type: 'line', xMin: sectionLineStart.x, yMin: sectionLineStart.y, xMax: current.x, yMax: current.y, borderColor: 'rgba(255,0,0,0.5)', borderWidth: 2, drawTime: 'afterDraw' }; } else { annotations.tempLine.xMax = current.x; annotations.tempLine.yMax = current.y; } chartInstance.update('none'); } }
         function handlePlotDrawEnd(e) { if (!sectionLineStart || !isDrawingSectionLine) return; isDrawingSectionLine = false; const end = getChartCoordsFromCanvasEvent(e); delete chartInstance.options.plugins.annotation.annotations.tempLine; if (end) { if (Math.abs(sectionLineStart.x - end.x) > 1e-6 || Math.abs(sectionLineStart.y - end.y) > 1e-6) { defineSectionLineOnMapAndChart([sectionLineStart, end]); } } sectionLineStart = null; }
-        function handlePlotClick(evt) { const elems = chartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true); if (isSectionMode) { if (isSectionLineDefined) { const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter'); if (scatterElems.length > 0) { const elem = scatterElems[0]; const ds = chartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; const pointId = activePoints[ptIdx].id; const indexInSelection = pointsInLastSectionIds.indexOf(pointId); if (indexInSelection > -1) { pointsInLastSectionIds.splice(indexInSelection, 1); } else { pointsInLastSectionIds.push(pointId); } document.getElementById('create-section-profile-btn').disabled = pointsInLastSectionIds.length < 2; updateSelectionHighlights(); } } else { const mode = document.getElementById('section-mode-select').value; const point = getChartCoordsFromClick(evt); if (!point) return; const { x: scaleX, y: scaleY } = chartInstance.scales; let linePoints = null; switch(mode) { case 'vertical': linePoints = [{x: point.x, y: scaleY.min}, {x: point.x, y: scaleY.max}]; break; case 'horizontal': linePoints = [{x: scaleX.min, y: point.y}, {x: scaleX.max, y: point.y}]; break; } if(linePoints) { defineSectionLineOnMapAndChart(linePoints); } } } else { const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter' && chartInstance.data.datasets[e.datasetIndex].label !== '平均値'); if (scatterElems.length > 0) { const elem = scatterElems[0]; const ds = chartInstance.data.datasets[elem.datasetIndex]; const ptIdx = ds.originalIndices[elem.index]; focusOnPoint(null, activePoints[ptIdx].id); } } }
+        // ▼ 追加: 測点選択モードのクリック処理
+        function handleSectionPointSelect(evt) {
+            const elems = chartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter' && chartInstance.data.datasets[e.datasetIndex].label !== '平均値');
+            if (scatterElems.length === 0) return;
+
+            const elem = scatterElems[0];
+            const ds = chartInstance.data.datasets[elem.datasetIndex];
+            const ptIdx = ds.originalIndices[elem.index];
+            const pointId = activePoints[ptIdx].id;
+            const clickedPointCoords = { x: ds.data[elem.index].x, y: ds.data[elem.index].y };
+
+            if (!sectionLinePoint1_ID) {
+                // 1点目のクリック
+                sectionLinePoint1_ID = pointId;
+                sectionLinePoint1_Coords = clickedPointCoords;
+                document.getElementById('section-status').textContent = '2点目の測点をクリックしてください';
+                rerenderUI(); // マーカー表示のために再描画
+            } else {
+                // 2点目のクリック
+                if (pointId === sectionLinePoint1_ID) return; // 同じ点をクリックした場合は無視
+
+                defineSectionLineOnMapAndChart([sectionLinePoint1_Coords, clickedPointCoords]);
+                
+                // 状態をリセット
+                isSelectingSectionPoints = false;
+                sectionLinePoint1_ID = null;
+                sectionLinePoint1_Coords = null;
+            }
+        }
+        // ▲ 追加
+        // ▼ 変更点: handlePlotClickに測点選択モードの分岐を追加
+        function handlePlotClick(evt) {
+            if (isSelectingSectionPoints) {
+                handleSectionPointSelect(evt);
+                return;
+            }
+            const elems = chartInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            if (isSectionMode) {
+                if (isSectionLineDefined) {
+                    const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter');
+                    if (scatterElems.length > 0) {
+                        const elem = scatterElems[0];
+                        const ds = chartInstance.data.datasets[elem.datasetIndex];
+                        const ptIdx = ds.originalIndices[elem.index];
+                        const pointId = activePoints[ptIdx].id;
+                        const indexInSelection = pointsInLastSectionIds.indexOf(pointId);
+                        if (indexInSelection > -1) {
+                            pointsInLastSectionIds.splice(indexInSelection, 1);
+                        } else {
+                            pointsInLastSectionIds.push(pointId);
+                        }
+                        document.getElementById('create-section-profile-btn').disabled = pointsInLastSectionIds.length < 2;
+                        updateSelectionHighlights();
+                    }
+                } else {
+                    const mode = document.getElementById('section-mode-select').value;
+                    const point = getChartCoordsFromClick(evt);
+                    if (!point) return;
+                    const { x: scaleX, y: scaleY } = chartInstance.scales;
+                    let linePoints = null;
+                    switch (mode) {
+                        case 'vertical': linePoints = [{ x: point.x, y: scaleY.min }, { x: point.x, y: scaleY.max }]; break;
+                        case 'horizontal': linePoints = [{ x: scaleX.min, y: point.y }, { x: scaleX.max, y: point.y }]; break;
+                    }
+                    if (linePoints) {
+                        defineSectionLineOnMapAndChart(linePoints);
+                    }
+                }
+            } else {
+                const scatterElems = elems.filter(e => chartInstance.data.datasets[e.datasetIndex].type === 'scatter' && chartInstance.data.datasets[e.datasetIndex].label !== '平均値');
+                if (scatterElems.length > 0) {
+                    const elem = scatterElems[0];
+                    const ds = chartInstance.data.datasets[elem.datasetIndex];
+                    const ptIdx = ds.originalIndices[elem.index];
+                    focusOnPoint(null, activePoints[ptIdx].id);
+                }
+            }
+        }
+        // ▲ 変更点
         function updateSelectionHighlights() { document.querySelectorAll('#tableContainer tr[data-id]').forEach(row => { row.classList.toggle('in-section', pointsInLastSectionIds.includes(row.dataset.id)); }); const highlightPointId = document.querySelector('tr.highlighted')?.dataset.id; [chartInstance, xzChartInstance, yzChartInstance].forEach(instance => { if (!instance) return; instance.data.datasets.forEach(dataset => { if (dataset.type !== 'scatter' || dataset.label === '平均値') return; dataset.originalIndices.forEach((originalIndex, dataIndex) => { const point = activePoints[originalIndex]; if (!point) return; if (point.id === highlightPointId) { dataset.pointRadius[dataIndex] = 10; dataset.backgroundColor[dataIndex] = '#ff0000'; dataset.borderColor[dataIndex] = '#000000'; dataset.borderWidth[dataIndex] = 2; } else if (pointsInLastSectionIds.includes(point.id)) { dataset.pointRadius[dataIndex] = 6; dataset.backgroundColor[dataIndex] = '#c79fef'; dataset.borderColor[dataIndex] = '#5d3d7e'; dataset.borderWidth[dataIndex] = 1; } else { dataset.pointRadius[dataIndex] = 5; dataset.backgroundColor[dataIndex] = loadedFiles[point.fileName].color + 'B3'; dataset.borderColor[dataIndex] = loadedFiles[point.fileName].color; dataset.borderWidth[dataIndex] = 1; } }); }); instance.update('none'); }); }
         function defineSectionLineOnMapAndChart(linePoints) { isSectionLineDefined = true; lastDefinedSectionLinePoints = linePoints; document.getElementById('xyPlot').classList.remove('crosshair'); document.getElementById('xyPlot').classList.add('editable-section'); const systemId = document.getElementById('coordSystem').value; const latLonLine = linePoints.map(p => xyToLatLon(p.y, p.x, systemId)); lastSectionCoords = { path: latLonLine, pathXY: linePoints }; if (mapSectionLine) map.removeLayer(mapSectionLine); const mapLineCoords = latLonLine.map(p => [p.lat, p.lon]); mapSectionLine = L.polyline(mapLineCoords, { color: 'red', weight: 3, dashArray: '5, 5' }).addTo(polylineLayer); document.getElementById('section-status').textContent = '点をクリックして断面に含める測点を編集できます'; const width = parseFloat(document.getElementById('section-width-input').value); if(isNaN(width) || width <= 0) return; pointsInLastSectionIds = []; activePoints.forEach(p => { const p_xy = latLonToXY(p.lat, p.lon, systemId); const pt = { x: p_xy.y, y: p_xy.x }; const closestInfo = findClosestPointOnPolyline(pt, lastDefinedSectionLinePoints); if (closestInfo.distance <= width / 2) { pointsInLastSectionIds.push(p.id); } }); document.getElementById('create-section-profile-btn').disabled = pointsInLastSectionIds.length < 2; rerenderUI(); }
         function updateSectionPlot(sectionType) { if (pointsInLastSectionIds.length < 2) { currentSectionData = []; } else if (sectionType === 'projected' && !lastDefinedSectionLinePoints) { currentSectionData = []; } else { const systemId = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const sectionPoints = activePoints.filter(p => pointsInLastSectionIds.includes(p.id)); if (sectionType === 'projected') { currentSectionData = sectionPoints.map(p => { const p_xy = latLonToXY(p.lat, p.lon, systemId); const pt = { x: p_xy.y, y: p_xy.x }; const closestInfo = findClosestPointOnPolyline(pt, lastDefinedSectionLinePoints); return { x: closestInfo.distAlong, y: p.antennaHeight - pole, name: p.name, antennaHeight: p.antennaHeight, originalX: p_xy.x, originalY: p_xy.y }; }).sort((a, b) => a.x - b.x); } else { let cumulativeDistance = 0; currentSectionData = sectionPoints.map((p, i) => { const p_xy = latLonToXY(p.lat, p.lon, systemId); if (i > 0) { const prev_p = sectionPoints[i-1]; const prev_p_xy = latLonToXY(prev_p.lat, prev_p.lon, systemId); const dx = p_xy.x - prev_p_xy.x; const dy = p_xy.y - prev_p_xy.y; cumulativeDistance += Math.sqrt(dx*dx + dy*dy); } return { x: cumulativeDistance, y: p.antennaHeight - pole, name: p.name, antennaHeight: p.antennaHeight, originalX: p_xy.x, originalY: p_xy.y }; }); } } if (sectionChartInstance) { sectionChartInstance.data.datasets[0].data = currentSectionData; sectionChartInstance.update(); } }
@@ -709,79 +857,30 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
         function displaySectionProfileModal() { const modal = document.getElementById('section-modal'); modal.style.display = 'flex'; const ctx = document.getElementById('sectionPlot'); if (sectionChartInstance) sectionChartInstance.destroy(); sectionChartInstance = new Chart(ctx, { type: 'line', data: { datasets: [{ label: '断面標高', data: [], borderColor: '#3498db', tension: 0, pointBackgroundColor: '#3498db', showLine: true }] }, plugins: [sectionPlotAspectRatioPlugin], options: { maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: '始点からの距離 (m)' } }, y: { title: { display: true, text: '補正後標高 (m)' } } }, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw.name}: (距離 ${ctx.parsed.x.toFixed(3)}m, 標高 ${ctx.parsed.y.toFixed(3)}m)` } } } } }); setTimeout(() => sectionChartInstance.resize(), 100); }
         function toDxfUnicode(text) { let result = ''; for (let i = 0; i < text.length; i++) { const char = text[i]; const charCode = char.charCodeAt(0); if (charCode > 127) { result += `\\U+${charCode.toString(16).padStart(4, '0')}`; } else { result += char; } } return result; }
         function generateDxfHeaderAndTables(isCombined = false) { let dxf = `0\nSECTION\n2\nHEADER\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n`; dxf += `0\nTABLE\n2\nSTYLE\n70\n1\n0\nSTYLE\n2\nMSP-GOTHIC\n70\n0\n40\n0.0\n41\n1.0\n50\n0.0\n71\n0\n42\n0.25\n3\nMS Pゴシック\n4\n\n0\nENDTAB\n`; dxf += `0\nTABLE\n2\nLAYER\n70\n10\n`; const planLayers = [ {name: 'PLAN_POINTS', color: 1}, {name: 'PLAN_TEXT', color: 2}, {name: 'PLAN_LINES', color: 3}, {name: 'PLAN_SECTION_LINE', color: 1, linetype: 'DASHDOT'}, {name: 'PLAN_GRID_LINES', color: 8, linetype: 'DOTTED'}, {name: 'PLAN_GRID_TEXT', color: 8} ]; const sectionLayers = [ {name: 'SECTION_PROFILE', color: 4}, {name: 'SECTION_POINTS', color: 5}, {name: 'SECTION_TEXT', color: 6}, {name: 'SECTION_GRID_LINES', color: 8, linetype: 'DOTTED'}, {name: 'SECTION_GRID_TEXT', color: 8} ]; const layers = isCombined ? [...planLayers, ...sectionLayers] : (activePoints.length > 0 ? planLayers : sectionLayers); const uniqueLayers = layers.filter((layer, index, self) => index === self.findIndex((l) => l.name === layer.name)); uniqueLayers.forEach(l => { dxf += `0\nLAYER\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\n${l.linetype || 'CONTINUOUS'}\n`; }); dxf += `0\nENDTAB\n0\nENDSEC\n`; return dxf; }
-       
-
- function generateDxfEntities(points, gridInterval) {
-            let dxf = '';
-            if (gridInterval > 0 && points.length > 0) {
-                const minX = Math.min(...points.map(p=>p.y)), maxX = Math.max(...points.map(p=>p.y));
-                const minY = Math.min(...points.map(p=>p.x)), maxY = Math.max(...points.map(p=>p.x));
-                
-                // ▼ 変更点: グリッドの描画範囲を計算する際に、外側に1区画分広げる
-                const startX = (Math.floor(minX / gridInterval) - 1) * gridInterval;
-                const endX   = (Math.ceil(maxX / gridInterval) + 1) * gridInterval;
-                const startY = (Math.floor(minY / gridInterval) - 1) * gridInterval;
-                const endY   = (Math.ceil(maxY / gridInterval) + 1) * gridInterval;
-                // ▲ 変更点
-
-                for (let x = startX; x <= endX; x += gridInterval) {
-                    // ▼ 変更点: グリッド線の長さを拡張後の範囲に合わせる
-                    dxf += `0\nLINE\n8\nPLAN_GRID_LINES\n10\n${x}\n20\n${startY}\n30\n0\n11\n${x}\n21\n${endY}\n31\n0\n`;
-                    dxf += `0\nTEXT\n8\nPLAN_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${x}\n20\n${startY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`;
-                    // ▲ 変更点
-                }
-                for (let y = startY; y <= endY; y += gridInterval) {
-                    // ▼ 変更点: グリッド線の長さを拡張後の範囲に合わせる
-                    dxf += `0\nLINE\n8\nPLAN_GRID_LINES\n10\n${startX}\n20\n${y}\n30\n0\n11\n${endX}\n21\n${y}\n31\n0\n`;
-                    dxf += `0\nTEXT\n8\nPLAN_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${startX}\n20\n${y}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`;
-                    // ▲ 変更点
-                }
-            }
-
-
- points.forEach(p => { dxf += `0\nPOINT\n8\nPLAN_POINTS\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`; dxf += `0\nTEXT\n8\nPLAN_TEXT\n7\nMSP-GOTHIC\n10\n${(p.y + 0.1).toFixed(4)}\n20\n${(p.x + 0.1).toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`; }); const pointsByFile = {}; points.forEach(p => { if (!pointsByFile[p.fileName]) pointsByFile[p.fileName] = []; pointsByFile[p.fileName].push(p); }); for(const fileName in pointsByFile) { if(pointsByFile[fileName].length < 2) continue; dxf += `0\nPOLYLINE\n8\nPLAN_LINES\n66\n1\n70\n0\n`; pointsByFile[fileName].forEach(p => { dxf += `0\nVERTEX\n8\nPLAN_LINES\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`; }); dxf += `0\nSEQEND\n`; } if(lastSectionCoords && lastSectionCoords.pathXY.length > 1) { dxf += `0\nPOLYLINE\n8\nPLAN_SECTION_LINE\n66\n1\n70\n0\n`; lastSectionCoords.pathXY.forEach(p => { dxf += `0\nVERTEX\n8\nPLAN_SECTION_LINE\n10\n${p.x}\n20\n${p.y}\n30\n0\n`; }); dxf += `0\nSEQEND\n`; } return dxf; }
-      
-
-  function generateSectionDxfEntities(data, gridInterval, offsetX = 0, offsetY = 0) {
-            let dxf = '';
-            if (gridInterval > 0 && data.length > 0) {
-                const minX = 0, maxX = Math.max(...data.map(p=>p.x));
-                const minY = Math.min(...data.map(p=>p.y)), maxY = Math.max(...data.map(p=>p.y));
-
-                // ▼ 変更点: グリッドの描画範囲を計算する際に、外側に1区画分広げる
-                const startX = (Math.floor(minX / gridInterval) - 1) * gridInterval;
-                const endX   = (Math.ceil(maxX / gridInterval) + 1) * gridInterval;
-                const startY = (Math.floor(minY / gridInterval) - 1) * gridInterval;
-                const endY   = (Math.ceil(maxY / gridInterval) + 1) * gridInterval;
-                // ▲ 変更点
-
-                for (let x = startX; x <= endX; x += gridInterval) {
-                    // ▼ 変更点: グリッド線の長さを拡張後の範囲に合わせる
-                    dxf += `0\nLINE\n8\nSECTION_GRID_LINES\n10\n${x+offsetX}\n20\n${startY+offsetY}\n30\n0\n11\n${x+offsetX}\n21\n${endY+offsetY}\n31\n0\n`;
-                    dxf += `0\nTEXT\n8\nSECTION_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${x+offsetX}\n20\n${startY+offsetY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`;
-                    // ▲ 変更点
-                }
-                for (let y = startY; y <= endY; y += gridInterval) {
-                    // ▼ 変更点: グリッド線の長さを拡張後の範囲に合わせる
-                    dxf += `0\nLINE\n8\nSECTION_GRID_LINES\n10\n${startX+offsetX}\n20\n${y+offsetY}\n30\n0\n11\n${endX+offsetX}\n21\n${y+offsetY}\n31\n0\n`;
-                    dxf += `0\nTEXT\n8\nSECTION_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${startX+offsetX}\n20\n${y+offsetY}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`;
-                    // ▲ 変更点
-                }
-            }
-
-
- dxf += `0\nPOLYLINE\n8\nSECTION_PROFILE\n66\n1\n70\n0\n`; data.forEach(p => { dxf += `0\nVERTEX\n8\nSECTION_PROFILE\n10\n${(p.x + offsetX).toFixed(4)}\n20\n${(p.y + offsetY).toFixed(4)}\n30\n0\n`; }); dxf += `0\nSEQEND\n`; data.forEach(p => { dxf += `0\nPOINT\n8\nSECTION_POINTS\n10\n${(p.x + offsetX).toFixed(4)}\n20\n${(p.y + offsetY).toFixed(4)}\n30\n0\n`; dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${(p.x + 0.1 + offsetX).toFixed(4)}\n20\n${(p.y + 0.1 + offsetY).toFixed(4)}\n30\n0\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`; const coordText = `(Y=${p.originalY.toFixed(3)},X=${p.originalX.toFixed(3)})`; dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${(p.x + 0.1 + offsetX).toFixed(4)}\n20\n${(p.y - 0.3 + offsetY).toFixed(4)}\n30\n0\n40\n0.15\n1\n${toDxfUnicode(coordText)}\n`; }); return dxf; }
+        function generateDxfEntities(points, gridInterval) { let dxf = ''; if (gridInterval > 0 && points.length > 0) { const minX = Math.min(...points.map(p=>p.y)), maxX = Math.max(...points.map(p=>p.y)); const minY = Math.min(...points.map(p=>p.x)), maxY = Math.max(...points.map(p=>p.x)); const startX = (Math.floor(minX / gridInterval) - 1) * gridInterval; const endX   = (Math.ceil(maxX / gridInterval) + 1) * gridInterval; const startY = (Math.floor(minY / gridInterval) - 1) * gridInterval; const endY   = (Math.ceil(maxY / gridInterval) + 1) * gridInterval; for (let x = startX; x <= endX; x += gridInterval) { dxf += `0\nLINE\n8\nPLAN_GRID_LINES\n10\n${x}\n20\n${startY}\n30\n0\n11\n${x}\n21\n${endY}\n31\n0\n`; dxf += `0\nTEXT\n8\nPLAN_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${x}\n20\n${startY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`; } for (let y = startY; y <= endY; y += gridInterval) { dxf += `0\nLINE\n8\nPLAN_GRID_LINES\n10\n${startX}\n20\n${y}\n30\n0\n11\n${endX}\n21\n${y}\n31\n0\n`; dxf += `0\nTEXT\n8\nPLAN_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${startX}\n20\n${y}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`; } } points.forEach(p => { dxf += `0\nPOINT\n8\nPLAN_POINTS\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`; dxf += `0\nTEXT\n8\nPLAN_TEXT\n7\nMSP-GOTHIC\n10\n${(p.y + 0.1).toFixed(4)}\n20\n${(p.x + 0.1).toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`; }); const pointsByFile = {}; points.forEach(p => { if (!pointsByFile[p.fileName]) pointsByFile[p.fileName] = []; pointsByFile[p.fileName].push(p); }); for(const fileName in pointsByFile) { if(pointsByFile[fileName].length < 2) continue; dxf += `0\nPOLYLINE\n8\nPLAN_LINES\n66\n1\n70\n0\n`; pointsByFile[fileName].forEach(p => { dxf += `0\nVERTEX\n8\nPLAN_LINES\n10\n${p.y.toFixed(4)}\n20\n${p.x.toFixed(4)}\n30\n${p.correctedEle.toFixed(4)}\n`; }); dxf += `0\nSEQEND\n`; } if(lastSectionCoords && lastSectionCoords.pathXY.length > 1) { dxf += `0\nPOLYLINE\n8\nPLAN_SECTION_LINE\n66\n1\n70\n0\n`; lastSectionCoords.pathXY.forEach(p => { dxf += `0\nVERTEX\n8\nPLAN_SECTION_LINE\n10\n${p.x}\n20\n${p.y}\n30\n0\n`; }); dxf += `0\nSEQEND\n`; } return dxf; }
+        function generateSectionDxfEntities(data, gridInterval, offsetX = 0, offsetY = 0) { let dxf = ''; if (gridInterval > 0 && data.length > 0) { const minX = 0, maxX = Math.max(...data.map(p=>p.x)); const minY = Math.min(...data.map(p=>p.y)), maxY = Math.max(...data.map(p=>p.y)); const startX = (Math.floor(minX / gridInterval) - 1) * gridInterval; const endX   = (Math.ceil(maxX / gridInterval) + 1) * gridInterval; const startY = (Math.floor(minY / gridInterval) - 1) * gridInterval; const endY   = (Math.ceil(maxY / gridInterval) + 1) * gridInterval; for (let x = startX; x <= endX; x += gridInterval) { dxf += `0\nLINE\n8\nSECTION_GRID_LINES\n10\n${x+offsetX}\n20\n${startY+offsetY}\n30\n0\n11\n${x+offsetX}\n21\n${endY+offsetY}\n31\n0\n`; dxf += `0\nTEXT\n8\nSECTION_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${x+offsetX}\n20\n${startY+offsetY}\n30\n0\n40\n${gridInterval/10}\n1\n${x.toFixed(1)}\n`; } for (let y = startY; y <= endY; y += gridInterval) { dxf += `0\nLINE\n8\nSECTION_GRID_LINES\n10\n${startX+offsetX}\n20\n${y+offsetY}\n30\n0\n11\n${endX+offsetX}\n21\n${y+offsetY}\n31\n0\n`; dxf += `0\nTEXT\n8\nSECTION_GRID_TEXT\n7\nMSP-GOTHIC\n10\n${startX+offsetX}\n20\n${y+offsetY}\n30\n0\n40\n${gridInterval/10}\n1\n${y.toFixed(1)}\n`; } } dxf += `0\nPOLYLINE\n8\nSECTION_PROFILE\n66\n1\n70\n0\n`; data.forEach(p => { dxf += `0\nVERTEX\n8\nSECTION_PROFILE\n10\n${(p.x + offsetX).toFixed(4)}\n20\n${(p.y + offsetY).toFixed(4)}\n30\n0\n`; }); dxf += `0\nSEQEND\n`; data.forEach(p => { dxf += `0\nPOINT\n8\nSECTION_POINTS\n10\n${(p.x + offsetX).toFixed(4)}\n20\n${(p.y + offsetY).toFixed(4)}\n30\n0\n`; dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${(p.x + 0.1 + offsetX).toFixed(4)}\n20\n${(p.y + 0.1 + offsetY).toFixed(4)}\n30\n0\n40\n0.25\n1\n${toDxfUnicode(p.name)}\n`; const coordText = `(Y=${p.originalY.toFixed(3)},X=${p.originalX.toFixed(3)})`; dxf += `0\nTEXT\n8\nSECTION_TEXT\n7\nMSP-GOTHIC\n10\n${(p.x + 0.1 + offsetX).toFixed(4)}\n20\n${(p.y - 0.3 + offsetY).toFixed(4)}\n30\n0\n40\n0.15\n1\n${toDxfUnicode(coordText)}\n`; }); return dxf; }
         function generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection) { const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole })); if (processedPoints.length === 0) { alert("平面図に出力するデータがありません。"); return ''; } let dxf = generateDxfHeaderAndTables(true); dxf += `0\nSECTION\n2\nENTITIES\n`; dxf += generateDxfEntities(processedPoints, gridIntervalPlan); dxf += generateSectionDxfEntities(currentSectionData, gridIntervalSection, 0, 0); dxf += `0\nENDSEC\n0\nEOF\n`; return dxf; }
-        function saveProject() { if (Object.keys(loadedFiles).length === 0) { alert("保存するデータがありません。"); return; } const projectData = { version: "3.2", savedAt: new Date().toISOString(), loadedFiles: {}, pointOrder: activePoints.map(p => p.id), uiState: { coordSystem: document.getElementById('coordSystem').value, poleHeight: document.getElementById('poleHeight').value, mapView: { center: map.getCenter(), zoom: map.getZoom() }, lastSectionCoords: lastSectionCoords, activeTabId: document.querySelector('.tab-button.active').id } }; for (const fileName in loadedFiles) { const fileData = loadedFiles[fileName]; const savedFile = { gpxContent: fileData.gpxContent, visible: fileData.visible, color: fileData.color, modifications: {}, pointsData: [] }; fileData.points.forEach(p => { savedFile.pointsData.push({ id: p.id, name: p.name, lat: p.lat, lon: p.lon, antennaHeight: p.antennaHeight, time: p.time, cmtText: p.cmtText, pointGeoidHeight: p.pointGeoidHeight, ellipsoidHeight: p.ellipsoidHeight, eleDiff: p.eleDiff, isHidden: p.isHidden }); if (Object.keys(p.modifiedFields).length > 0) { savedFile.modifications[p.id] = {}; if (p.modifiedFields.name) savedFile.modifications[p.id].name = p.name; if (p.modifiedFields.antennaHeight) savedFile.modifications[p.id].antennaHeight = p.antennaHeight; } }); projectData.loadedFiles[fileName] = savedFile; } const jsonString = JSON.stringify(projectData, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `gnss-viewer-project.gsv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
-        function loadProject(file) { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const projectData = JSON.parse(e.target.result); if (!projectData.version || !projectData.loadedFiles) { throw new Error("無効なプロジェクトファイルです。"); } loadedFiles = {}; activePoints = []; lastSectionCoords = null; actionHistory = []; document.getElementById('undoBtn').disabled = true; if (chartInstance) { chartInstance.destroy(); chartInstance = null; } if (xzChartInstance) { xzChartInstance.destroy(); xzChartInstance = null; } if (yzChartInstance) { yzChartInstance.destroy(); yzChartInstance = null; } Plotly.purge('plot-3d-container'); for (const fileName in projectData.loadedFiles) { const fileData = projectData.loadedFiles[fileName]; let points = []; if (fileData.pointsData) { points = fileData.pointsData.map(p => ({ ...p, fileName: fileName, modifiedFields: {}, isHidden: p.isHidden || false })); } else { console.warn(`プロジェクト内の ${fileName} には表示できるデータがありませんでした。スキップします。`); continue; } if (fileData.modifications) { points.forEach(p => { if (fileData.modifications[p.id]) { const mod = fileData.modifications[p.id]; if (mod.name) { p.name = mod.name; p.modifiedFields.name = true; } if (mod.antennaHeight !== undefined) { p.antennaHeight = mod.antennaHeight; p.modifiedFields.antennaHeight = true; } } }); } loadedFiles[fileName] = { points: points, visible: fileData.visible, color: fileData.color, gpxContent: fileData.gpxContent }; } const ui = projectData.uiState; document.getElementById('coordSystem').value = ui.coordSystem; document.getElementById('poleHeight').value = ui.poleHeight; map.setView(ui.mapView.center, ui.mapView.zoom); lastSectionCoords = ui.lastSectionCoords; updateFileListUI(); updateUI(); } catch (err) { alert(`プロジェクトファイルの読み込みに失敗しました: ${err.message}`); } finally { document.getElementById('projectInput').value = ''; } }; reader.readAsText(file); }
+        function saveProject() { if (Object.keys(loadedFiles).length === 0) { alert("保存するデータがありません。"); return; } const projectData = { version: "3.4", savedAt: new Date().toISOString(), loadedFiles: {}, pointOrder: activePoints.map(p => p.id), uiState: { coordSystem: document.getElementById('coordSystem').value, poleHeight: document.getElementById('poleHeight').value, selectedDatum: document.getElementById('datum-select').value, mapView: { center: map.getCenter(), zoom: map.getZoom() }, lastSectionCoords: lastSectionCoords, activeTabId: document.querySelector('.tab-button.active').id } }; for (const fileName in loadedFiles) { const fileData = loadedFiles[fileName]; const savedFile = { gpxContent: fileData.gpxContent, visible: fileData.visible, color: fileData.color, modifications: {}, pointsData: [] }; fileData.points.forEach(p => { savedFile.pointsData.push({ id: p.id, name: p.name, lat: p.lat, lon: p.lon, antennaHeight: p.antennaHeight, time: p.time, cmtText: p.cmtText, pointGeoidHeight: p.pointGeoidHeight, ellipsoidHeight: p.ellipsoidHeight, eleDiff: p.eleDiff, isHidden: p.isHidden, originalCoordSystemType: p.originalCoordSystemType || '' }); if (Object.keys(p.modifiedFields).length > 0) { savedFile.modifications[p.id] = {}; if (p.modifiedFields.name) savedFile.modifications[p.id].name = p.name; if (p.modifiedFields.antennaHeight) savedFile.modifications[p.id].antennaHeight = p.antennaHeight; } }); projectData.loadedFiles[fileName] = savedFile; } const jsonString = JSON.stringify(projectData, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `gnss-viewer-project.gsv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+        function loadProject(file) { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const projectData = JSON.parse(e.target.result); if (!projectData.version || !projectData.loadedFiles) { throw new Error("無効なプロジェクトファイルです。"); } loadedFiles = {}; activePoints = []; lastSectionCoords = null; actionHistory = []; document.getElementById('undoBtn').disabled = true; if (chartInstance) { chartInstance.destroy(); chartInstance = null; } if (xzChartInstance) { xzChartInstance.destroy(); xzChartInstance = null; } if (yzChartInstance) { yzChartInstance.destroy(); yzChartInstance = null; } Plotly.purge('plot-3d-container'); for (const fileName in projectData.loadedFiles) { const fileData = projectData.loadedFiles[fileName]; let points = []; if (fileData.pointsData) { points = fileData.pointsData.map(p => ({ ...p, fileName: fileName, modifiedFields: {}, isHidden: p.isHidden || false })); } else { console.warn(`プロジェクト内の ${fileName} には表示できるデータがありませんでした。スキップします。`); continue; } if (fileData.modifications) { points.forEach(p => { if (fileData.modifications[p.id]) { const mod = fileData.modifications[p.id]; if (mod.name) { p.name = mod.name; p.modifiedFields.name = true; } if (mod.antennaHeight !== undefined) { p.antennaHeight = mod.antennaHeight; p.modifiedFields.antennaHeight = true; } } }); } loadedFiles[fileName] = { points: points, visible: fileData.visible, color: fileData.color, gpxContent: fileData.gpxContent }; } const ui = projectData.uiState; document.getElementById('coordSystem').value = ui.coordSystem; document.getElementById('poleHeight').value = ui.poleHeight; if (ui.selectedDatum) { document.getElementById('datum-select').value = ui.selectedDatum; } map.setView(ui.mapView.center, ui.mapView.zoom); lastSectionCoords = ui.lastSectionCoords; updateFileListUI(); updateUI(); } catch (err) { alert(`プロジェクトファイルの読み込みに失敗しました: ${err.message}`); } finally { document.getElementById('projectInput').value = ''; } }; reader.readAsText(file); }
         function performClusteringAndStatistics(xyToleranceCm, zToleranceCm) { if (activePoints.length === 0) { alert("処理対象のデータがありません。"); return; } const xyTolerance = xyToleranceCm / 100.0; const zTolerance = zToleranceCm / 100.0; const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const allCurrentPoints = []; for(const f in loadedFiles) { allCurrentPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden)); } const processedPoints = allCurrentPoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole, processed: false })); const groups = []; lastClusteredPointIds.clear(); for (let i = 0; i < processedPoints.length; i++) { const point = processedPoints[i]; if (point.processed) continue; const newGroup = []; const queue = [point]; point.processed = true; while (queue.length > 0) { const current = queue.shift(); newGroup.push(current); for (let j = 0; j < processedPoints.length; j++) { const other = processedPoints[j]; if (other.processed) continue; const dx = current.x - other.x; const dy = current.y - other.y; const dz = current.correctedEle - other.correctedEle; const distXY = Math.sqrt(dx * dx + dy * dy); const distZ = Math.abs(dz); if (distXY <= xyTolerance && distZ <= zTolerance) { other.processed = true; queue.push(other); } } } if (newGroup.length > 1) { groups.push(newGroup); newGroup.forEach(p => lastClusteredPointIds.add(p.id)); } } if (groups.length === 0) { alert("設定された閾値内で、複数の測定記録がある地点が見つかりませんでした。閾値を広げて試してください。"); return; } lastClusterResults = groups.map((group, index) => { const xCoords = group.map(p => p.x); const yCoords = group.map(p => p.y); const eleCoords = group.map(p => p.correctedEle); const meanX = getMean(xCoords); const meanY = getMean(yCoords); const meanEle = getMean(eleCoords); const commonName = findLongestCommonPrefix(group.map(p => p.name)); return { groupId: commonName || `グループ ${index + 1}`, originalPointIds: group.map(p => p.id), points: group.map(p => p.name), count: group.length, meanX: meanX, meanY: meanY, meanEle: meanEle, stdDevX: getStdDev(xCoords, meanX), stdDevY: getStdDev(yCoords, meanY), stdDevEle: getStdDev(eleCoords, meanEle), rangeX: Math.max(...xCoords) - Math.min(...xCoords), rangeY: Math.max(...yCoords) - Math.min(...yCoords), color: COLORS[index % COLORS.length] }; }); displayGroupStatisticsModal(lastClusterResults); displayGroupStatsOnMap(lastClusterResults, sys); rerenderUI(); }
         function displayGroupStatisticsModal(results) { const modal = document.getElementById('stats-modal'); const body = document.getElementById('stats-modal-body'); let tableHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;"><thead><tr style="background-color: #2c3e50; color: white;"><th style="padding: 8px; border: 1px solid #ddd;">グループID</th><th style="padding: 8px; border: 1px solid #ddd;">回数</th><th style="padding: 8px; border: 1px solid #ddd;">平均X (m)</th><th style="padding: 8px; border: 1px solid #ddd;">平均Y (m)</th><th style="padding: 8px; border: 1px solid #ddd;">平均標高 (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="X座標の標準偏差">σX (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="Y座標の標準偏差">σY (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="標高の標準偏差">σ標高 (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="水平方向の最大最小の差">範囲XY (m)</th></tr></thead><tbody>`; results.forEach((r, index) => { const horizontalRange = Math.sqrt(r.rangeX**2 + r.rangeY**2); const originalNames = r.points.join(', '); tableHTML += `<tr data-group-index="${index}"><td style="padding: 8px; border: 1px solid #ddd; cursor: help;" title="含まれる測点: ${originalNames}"><span class="color-indicator" style="background-color:${r.color};"></span>${r.groupId}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.count}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanX.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanY.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanEle.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevX.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevY.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevEle.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${horizontalRange.toFixed(4)}</td></tr>`; }); tableHTML += `</tbody></table>`; body.innerHTML = tableHTML; modal.style.display = 'flex'; }
         function displayGroupStatsOnMap(results, systemId) { if (statsLayerGroup) { statsLayerGroup.clearLayers(); } else { statsLayerGroup = L.layerGroup().addTo(map); } results.forEach(r => { const { lat, lon } = xyToLatLon(r.meanX, r.meanY, systemId); const horizontalStdDev = Math.sqrt(r.stdDevX**2 + r.stdDevY**2); const iconHtml = `<span style="font-size: 24px; color: ${r.color}; text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;">★</span>`; const avgMarker = L.marker([lat, lon], { icon: L.divIcon({ html: iconHtml, className: 'text-marker', iconSize: [24, 24], iconAnchor: [12, 12] }) }).bindPopup(`<b>${r.groupId} (平均値)</b><br>測定回数: ${r.count}<br>水平標準偏差 (σXY): ${horizontalStdDev.toFixed(4)}m`); statsLayerGroup.addLayer(avgMarker); if (horizontalStdDev > 0) { const circle = L.circle([lat, lon], { radius: horizontalStdDev, color: r.color, fillColor: r.color, fillOpacity: 0.3 }); statsLayerGroup.addLayer(circle); } }); }
-        function addAveragesToData() { if (!lastClusterResults) { alert("統計処理が実行されていません。"); return; } const sys = document.getElementById('coordSystem').value; const avgFileName = "統計処理_平均値"; const ungroupedFileName = "統計処理_対象外データ"; const newAvgPoints = lastClusterResults.map((r, index) => { const { lat, lon } = xyToLatLon(r.meanX, r.meanY, sys); return { id: `${avgFileName}-${index}`, name: `${r.groupId} (平均)`, lat: lat, lon: lon, antennaHeight: r.meanEle, time: new Date().toISOString(), cmtText: `(${r.count}点の平均値)`, fileName: avgFileName, modifiedFields: {}, isHidden: false }; }); let allOriginalPoints = []; for(const f in loadedFiles) { allOriginalPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden)); } const newUngroupedPoints = allOriginalPoints.filter(p => !lastClusteredPointIds.has(p.id)).map(p => ({ ...p, fileName: ungroupedFileName, id: `${ungroupedFileName}-${p.id}` })); if (loadedFiles[avgFileName] || loadedFiles[ungroupedFileName]) { if(!confirm(`統計処理データは既に存在します。上書きしますか？`)) return; } loadedFiles[avgFileName] = { points: newAvgPoints, visible: true, color: '#ff00ff', gpxContent: null }; if(newUngroupedPoints.length > 0) { loadedFiles[ungroupedFileName] = { points: newUngroupedPoints, visible: true, color: '#888888', gpxContent: null }; } Object.keys(loadedFiles).forEach(fileName => { if (fileName !== avgFileName && fileName !== ungroupedFileName) { loadedFiles[fileName].visible = false; } }); alert(`「${avgFileName}」と「${ungroupedFileName}」が追加されました。\n元のデータは非表示になっています。`); updateFileListUI(); updateUI(); document.getElementById('stats-modal').style.display = 'none'; if (statsLayerGroup) statsLayerGroup.clearLayers(); lastClusterResults = null; rerenderUI(); }
+        function addAveragesToData() { if (!lastClusterResults) { alert("統計処理が実行されていません。"); return; } const sys = document.getElementById('coordSystem').value; const avgFileName = "統計処理_平均値"; const ungroupedFileName = "統計処理_対象外データ"; const newAvgPoints = lastClusterResults.map((r, index) => { const { lat, lon } = xyToLatLon(r.meanX, r.meanY, sys); return { id: `${avgFileName}-${index}`, name: `${r.groupId} (平均)`, lat: lat, lon: lon, antennaHeight: r.meanEle, time: new Date().toISOString(), cmtText: `(${r.count}点の平均値)`, fileName: avgFileName, modifiedFields: {}, isHidden: false, originalCoordSystemType: '' }; }); let allOriginalPoints = []; for(const f in loadedFiles) { allOriginalPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden)); } const newUngroupedPoints = allOriginalPoints.filter(p => !lastClusteredPointIds.has(p.id)).map(p => ({ ...p, fileName: ungroupedFileName, id: `${ungroupedFileName}-${p.id}` })); if (loadedFiles[avgFileName] || loadedFiles[ungroupedFileName]) { if(!confirm(`統計処理データは既に存在します。上書きしますか？`)) return; } loadedFiles[avgFileName] = { points: newAvgPoints, visible: true, color: '#ff00ff', gpxContent: null }; if(newUngroupedPoints.length > 0) { loadedFiles[ungroupedFileName] = { points: newUngroupedPoints, visible: true, color: '#888888', gpxContent: null }; } Object.keys(loadedFiles).forEach(fileName => { if (fileName !== avgFileName && fileName !== ungroupedFileName) { loadedFiles[fileName].visible = false; } }); alert(`「${avgFileName}」と「${ungroupedFileName}」が追加されました。\n元のデータは非表示になっています。`); updateFileListUI(); updateUI(); document.getElementById('stats-modal').style.display = 'none'; if (statsLayerGroup) statsLayerGroup.clearLayers(); lastClusterResults = null; rerenderUI(); }
         
         function initialize() {
             coordinateSystems.forEach(sys => { const projDef = `+proj=tmerc +lat_0=${sys.lat0} +lon_0=${sys.lon0} +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs`; proj4.defs(`EPSG:${sys.epsg}`, projDef); });
             for (let i = 1; i <= 19; i++) { const opt = document.createElement('option'); opt.value = i; opt.textContent = `第${i}系`; if (i === 9) opt.selected = true; document.getElementById('coordSystem').appendChild(opt); }
+            
+            const datumSelect = document.getElementById('datum-select');
+            datumOffsets.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.value;
+                opt.textContent = d.name;
+                opt.title = `${d.label} = T.P. - (${d.value.toFixed(4)}m)`;
+                datumSelect.appendChild(opt);
+            });
+            datumSelect.addEventListener('change', () => rerenderUI());
+
             initMap();
             document.getElementById('fileInput').addEventListener('change', (e) => processFiles(e.target.files));
             document.getElementById('csvInput').addEventListener('change', (e) => processFiles(e.target.files));
@@ -804,15 +903,7 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
             tableContainer.addEventListener('click', (e) => { const targetRow = e.target.closest('tr'); if (!targetRow) return; if (e.target.classList.contains('visibility-toggle')) return; if (targetRow.classList.contains('highlighted') && e.target.closest('.editable-cell')) return; if (window.getSelection().toString()) return; focusOnPoint(e, targetRow.dataset.id); });
             tableContainer.addEventListener('dblclick', handleTableCellEdit);
             const mobileTabs = document.querySelector('.mobile-only-tabs'); const desktopTabs = document.querySelector('.right-panel .tab-bar'); const leftPanel = document.querySelector('.left-panel'); const rightPanel = document.querySelector('.right-panel');
-            mobileTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); e.target.classList.add('active'); const targetId = e.target.id; if (targetId === 'tab-data-mobile') { leftPanel.classList.remove('hidden-on-mobile'); rightPanel.classList.add('hidden-on-mobile'); } else { leftPanel.classList.add('hidden-on-mobile'); rightPanel.classList.remove('hidden-on-mobile'); if (targetId === 'tab-map-mobile') { document.getElementById('tab-map').click(); } else if (targetId === 'tab-plot-mobile') { document.getElementById('tab-plot').click();                     } else if (targetId === 'tab-xz-plot-mobile') { // ▼ここから追加
-                        document.getElementById('tab-xz-plot').click();
-                    } else if (targetId === 'tab-yz-plot-mobile') {
-                        document.getElementById('tab-yz-plot').click(); // ▲ここまで追加
-                    } else if (targetId === 'tab-3d-plot-mobile') {
-                        document.getElementById('tab-3d-plot').click();
-                    }
-                }
-            });
+            mobileTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; mobileTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); e.target.classList.add('active'); const targetId = e.target.id; if (targetId === 'tab-data-mobile') { leftPanel.classList.remove('hidden-on-mobile'); rightPanel.classList.add('hidden-on-mobile'); } else { leftPanel.classList.add('hidden-on-mobile'); rightPanel.classList.remove('hidden-on-mobile'); if (targetId === 'tab-map-mobile') { document.getElementById('tab-map').click(); } else if (targetId === 'tab-plot-mobile') { document.getElementById('tab-plot').click(); } else if (targetId === 'tab-xz-plot-mobile') { document.getElementById('tab-xz-plot').click(); } else if (targetId === 'tab-yz-plot-mobile') { document.getElementById('tab-yz-plot').click(); } else if (targetId === 'tab-3d-plot-mobile') { document.getElementById('tab-3d-plot').click(); } } });
             desktopTabs.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-button')) return; desktopTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active')); e.target.classList.add('active'); const paneId = e.target.id.replace('tab-', 'pane-'); document.getElementById(paneId).classList.add('active'); if (paneId === 'pane-map') { setTimeout(() => map.invalidateSize(), 10); } else if (paneId === 'pane-plot' && chartInstance) { setTimeout(() => chartInstance.resize(), 10); } else if (paneId === 'pane-xz-plot' && xzChartInstance) { setTimeout(() => xzChartInstance.resize(), 10); } else if (paneId === 'pane-yz-plot' && yzChartInstance) { setTimeout(() => yzChartInstance.resize(), 10); } else if (paneId === 'pane-3d-plot') { setTimeout(() => Plotly.Plots.resize(document.getElementById('plot-3d-container')), 10); } });
             const body = document.body; body.addEventListener('dragover', (e) => { e.preventDefault(); body.classList.add('drag-over'); }); body.addEventListener('dragleave', () => body.classList.remove('drag-over')); body.addEventListener('drop', (e) => { e.preventDefault(); body.classList.remove('drag-over'); processFiles(e.dataTransfer.files); });
             document.getElementById('section-line-btn').addEventListener('click', toggleSectionLineMode);
@@ -881,66 +972,28 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
                 defineSectionLineOnMapAndChart(linePoints);
                 sectionCoordsModal.style.display = 'none';
             });
-// --- 以下のコードで、既存のCSV/DXFボタンのコードを置き換えてください ---
 
-            // メインウィンドウ: CSV保存ボタン (修正版)
             document.getElementById('downloadCsvBtn').addEventListener('click', () => {
-                if (activePoints.length === 0) {
-                    alert("エクスポートするデータがありません。");
-                    return;
-                }
-
-                // CSVフィールドをエスケープするヘルパー関数
-                const escapeCsvField = (field) => {
-                    if (field === null || typeof field === 'undefined') {
-                        return '';
-                    }
-                    const str = String(field);
-                    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-                        // ダブルクォートを2つに置き換え、全体をダブルクォートで囲む
-                        return `"${str.replace(/"/g, '""')}"`;
-                    }
-                    return str;
-                };
-
+                if (activePoints.length === 0) { alert("エクスポートするデータがありません。"); return; }
+                const escapeCsvField = (field) => { if (field === null || typeof field === 'undefined') return ''; const str = String(field); if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) { return `"${str.replace(/"/g, '""')}"`; } return str; };
                 const sys = document.getElementById('coordSystem').value;
                 const pole = parseFloat(document.getElementById('poleHeight').value);
-                let csvContent = "\uFEFF"; // Excel用のBOM
-                
-                // 新しいヘッダー行
-                const headers = [
-                    "測点名", "緯度", "経度", "X(m)", "Y(m)", 
-                    "アンテナ高(m)", "補正後標高(m)", "CMTデータ", "ジオイド高", 
-                    "ジオイドシステム", "FIXモード"
-                ];
+                let csvContent = "\uFEFF";
+                const headers = ["測点名", "緯度", "経度", "X(m)", "Y(m)", "アンテナ高(m)", "補正後標高(m)", "CMTデータ", "座標系(元)", "座標系(修正)", "ジオイド高", "ジオイドシステム", "FIXモード"];
                 csvContent += headers.join(',') + "\r\n";
-
                 activePoints.forEach(p => {
                     const coords = latLonToXY(p.lat, p.lon, sys);
                     const correctedEle = p.antennaHeight - pole;
-                    
-                    let rowData = [
-                        p.name, p.lat.toFixed(9), p.lon.toFixed(9), 
-                        coords.x.toFixed(4), coords.y.toFixed(4), 
-                        p.antennaHeight.toFixed(4), correctedEle.toFixed(4)
-                    ];
-
-                    // 統計処理で作成されたデータの場合、追加情報は空にする
+                    let rowData = [p.name, p.lat.toFixed(9), p.lon.toFixed(9), coords.x.toFixed(4), coords.y.toFixed(4), p.antennaHeight.toFixed(4), correctedEle.toFixed(4)];
                     if (p.fileName && p.fileName.startsWith("統計処理_")) {
-                        rowData.push('', '', '', '');
+                        rowData.push('', '', `第${sys}系`, '', '', '');
                     } else {
-                        rowData.push(
-                            p.cmtText || '',
-                            p.pointGeoidHeight !== null ? p.pointGeoidHeight : '',
-                            p.geoidSystem || '',
-                            p.fixMode || ''
-                        );
+                        const originalSystem = p.originalCoordSystemType ? `第${p.originalCoordSystemType.replace(/[^0-9]/g, '')}系` : '';
+                        rowData.push(p.cmtText || '', originalSystem, `第${sys}系`, p.pointGeoidHeight !== null ? p.pointGeoidHeight : '', p.geoidSystem || '', p.fixMode || '');
                     }
-                    
                     const row = rowData.map(escapeCsvField).join(',');
                     csvContent += row + "\r\n";
                 });
-                
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
@@ -950,28 +1003,18 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
                 document.body.removeChild(link);
             });
 
-            // メインウィンドウ: DXF保存ボタン
             document.getElementById('downloadDxfBtn').addEventListener('click', () => {
-                if (activePoints.length === 0) {
-                    alert("エクスポートするデータがありません。");
-                    return;
-                }
+                if (activePoints.length === 0) { alert("エクスポートするデータがありません。"); return; }
                 const gridIntervalStr = prompt("平面図のグリッド間隔(m)を入力してください。\n不要な場合は0を入力してください。", "10");
                 const gridInterval = parseFloat(gridIntervalStr);
-                if (isNaN(gridInterval)) {
-                    alert("無効な数値です。");
-                    return;
-                }
-
+                if (isNaN(gridInterval)) { alert("無効な数値です。"); return; }
                 const sys = document.getElementById('coordSystem').value;
                 const pole = parseFloat(document.getElementById('poleHeight').value);
                 const processedPoints = activePoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole }));
-                
                 let dxf = generateDxfHeaderAndTables(false);
                 dxf += `0\nSECTION\n2\nENTITIES\n`;
                 dxf += generateDxfEntities(processedPoints, gridInterval);
                 dxf += `0\nENDSEC\n0\nEOF\n`;
-                
                 const blob = new Blob([dxf], { type: 'application/dxf' });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
@@ -981,15 +1024,9 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
                 document.body.removeChild(link);
             });
 
-            // 断面図ウィンドウ: CSV保存ボタン (修正版)
             document.getElementById('downloadSectionCsvBtn').addEventListener('click', () => {
-                if (!currentSectionData || currentSectionData.length === 0) {
-                    alert("エクスポートする断面データがありません。");
-                    return;
-                }
-                let csvContent = "\uFEFF"; // Excel用のBOM
-
-                // 断面線座標の書き出し
+                if (!currentSectionData || currentSectionData.length === 0) { alert("エクスポートする断面データがありません。"); return; }
+                let csvContent = "\uFEFF";
                 if (lastSectionCoords && lastSectionCoords.pathXY && lastSectionCoords.pathXY.length >= 2) {
                     csvContent += "断面線座標\r\n";
                     csvContent += "項目,Y座標(m),X座標(m)\r\n";
@@ -997,21 +1034,11 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
                     const endPoint = lastSectionCoords.pathXY[lastSectionCoords.pathXY.length - 1];
                     csvContent += `始点,${startPoint.x.toFixed(4)},${startPoint.y.toFixed(4)}\r\n`;
                     csvContent += `終点,${endPoint.x.toFixed(4)},${endPoint.y.toFixed(4)}\r\n`;
-                    csvContent += "\r\n"; // 空行で区切る
+                    csvContent += "\r\n";
                 }
-
-                // 測点データの書き出し
                 const sectionType = document.querySelector('input[name="sectionType"]:checked').value;
-                if (sectionType === 'projected') {
-                    csvContent += "測点名,始点からの距離(m),補正後標高(m),元のX座標(m),元のY座標(m)\r\n";
-                } else { // connected
-                    csvContent += "測点名,累積距離(m),補正後標高(m),元のX座標(m),元のY座標(m)\r\n";
-                }
-                currentSectionData.forEach(p => {
-                    const row = [p.name, p.x.toFixed(4), p.y.toFixed(4), p.originalX.toFixed(4), p.originalY.toFixed(4)].join(',');
-                    csvContent += row + "\r\n";
-                });
-
+                if (sectionType === 'projected') { csvContent += "測点名,始点からの距離(m),補正後標高(m),元のX座標(m),元のY座標(m)\r\n"; } else { csvContent += "測点名,累積距離(m),補正後標高(m),元のX座標(m),元のY座標(m)\r\n"; }
+                currentSectionData.forEach(p => { const row = [p.name, p.x.toFixed(4), p.y.toFixed(4), p.originalX.toFixed(4), p.originalY.toFixed(4)].join(','); csvContent += row + "\r\n"; });
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
@@ -1021,43 +1048,27 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
                 document.body.removeChild(link);
             });
 
-            // 断面図ウィンドウ: DXF保存ボタン
             document.getElementById('downloadSectionDxfBtn').addEventListener('click', () => {
-                if (!currentSectionData || currentSectionData.length === 0) {
-                    alert("エクスポートする断面データがありません。");
-                    return;
-                }
+                if (!currentSectionData || currentSectionData.length === 0) { alert("エクスポートする断面データがありません。"); return; }
                 const exportType = document.querySelector('input[name="dxfExportType"]:checked').value;
                 const gridIntervalSectionStr = prompt("断面図のグリッド間隔(m)を入力してください。\n不要な場合は0を入力してください。", "1");
                 const gridIntervalSection = parseFloat(gridIntervalSectionStr);
-                if (isNaN(gridIntervalSection)) {
-                    alert("無効な数値です。");
-                    return;
-                }
-                
+                if (isNaN(gridIntervalSection)) { alert("無効な数値です。"); return; }
                 let dxf = '';
                 let fileName = 'section_profile.dxf';
-
                 if (exportType === 'both') {
-                    if (activePoints.length === 0) {
-                        alert("平面図に出力するデータがありません。\n「断面図のみ」を選択してください。");
-                        return;
-                    }
+                    if (activePoints.length === 0) { alert("平面図に出力するデータがありません。\n「断面図のみ」を選択してください。"); return; }
                     const gridIntervalPlanStr = prompt("平面図のグリッド間隔(m)を入力してください。\n不要な場合は0を入力してください。", "10");
                     const gridIntervalPlan = parseFloat(gridIntervalPlanStr);
-                    if (isNaN(gridIntervalPlan)) {
-                        alert("無効な数値です。");
-                        return;
-                    }
+                    if (isNaN(gridIntervalPlan)) { alert("無効な数値です。"); return; }
                     dxf = generateCombinedDxfContent(gridIntervalPlan, gridIntervalSection);
                     fileName = 'plan_and_section.dxf';
-                } else { // section_only
+                } else {
                     dxf = generateDxfHeaderAndTables(false);
                     dxf += `0\nSECTION\n2\nENTITIES\n`;
                     dxf += generateSectionDxfEntities(currentSectionData, gridIntervalSection, 0, 0); 
                     dxf += `0\nENDSEC\n0\nEOF\n`;
                 }
-
                 if (dxf) {
                     const blob = new Blob([dxf], { type: 'application/dxf' });
                     const link = document.createElement("a");
@@ -1068,8 +1079,7 @@ const isAspectRatioOneToOne = document.getElementById('plot3dAspectRatioToggle')
                     document.body.removeChild(link);
                 }
             });
-
- }
+        }
         
         initialize();
     </script>
