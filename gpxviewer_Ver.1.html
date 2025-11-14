@@ -857,7 +857,7 @@ function displayTable(points, highlightPointId) {
         <th><span id="toggle-all-visibility" title="全測点の表示/非表示を切り替え" style="cursor: pointer;">👁️</span></th>
         <th class="mobile-hidden-col">ファイル名</th>
         <th title="ダブルクリックで編集">測点名</th>
-        <th id="time-header" class="mobile-hidden-col filterable-header ${timeFilter.active ? 'filtered-header' : ''}" title="クリックして時間で絞り込み">
+        <th id="time-header" class="filterable-header ${timeFilter.active ? 'filtered-header' : ''}" title="クリックして時間で絞り込み">
             測定日時<span class="filter-icon">🔍</span>
         </th>
         <th>緯度</th><th>経度</th><th>X (m)</th><th>Y (m)</th>
@@ -893,7 +893,7 @@ function displayTable(points, highlightPointId) {
                 <td><span class="visibility-toggle" title="表示/非表示" onclick="${isFilteredOut ? '' : `togglePointVisibility('${p.id}')`}">${p.isHidden ? '🙈' : '👁️'}</span></td>
                 <td class="mobile-hidden-col">${p.fileName}</td>
                 <td class="editable-cell ${nameModifiedClass}" data-field="name"><strong>${p.name}</strong></td>
-                <td class="mobile-hidden-col">${p.time ? new Date(p.time).toLocaleString('ja-JP', { hour12: false }).replace(/\//g, '-') : 'N/A'}</td>
+                <td>${p.time ? new Date(p.time).toLocaleString('ja-JP', { hour12: false }).replace(/\//g, '-') : 'N/A'}</td>
                 <td>${p.lat.toFixed(9)}</td><td>${p.lon.toFixed(9)}</td>
                 <td>${coords.x.toFixed(3)}</td><td>${coords.y.toFixed(3)}</td>
                 <td class="editable-cell ${antennaHeightModifiedClass}" data-field="antennaHeight"><strong>${p.antennaHeight.toFixed(3)}</strong></td>
