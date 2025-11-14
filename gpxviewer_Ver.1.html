@@ -73,7 +73,6 @@
         table { width: 100%; border-collapse: collapse; background: white; font-size: 0.8em; }
         thead { position: sticky; top: 0; background: #34495e; color: white; z-index: 10; }
         th, td { padding: 8px 10px; text-align: left; border: 1px solid #ddd; white-space: nowrap; user-select: text; }
-        /* ▼追加: フィルタリング用ヘッダースタイル */
         th.filterable-header { cursor: pointer; }
         th.filterable-header:hover { background-color: #4a627a; }
         th.filtered-header { color: #4ecdc4; font-weight: bold; }
@@ -84,23 +83,21 @@ th.filterable-header:hover { background-color: #e0eaf5; color: #2c3e50; }
 th.filterable-header .filter-icon { margin-left: 5px; font-size: 1.1em; vertical-align: text-bottom; opacity: 0.5; }
 th.filterable-header:hover .filter-icon { opacity: 1; }
 
-/* フィルター適用中のスタイル（青文字＋太字） */
 th.filtered-header { color: #3498db !important; font-weight: bold; }
 th.filtered-header .filter-icon { opacity: 1; color: #3498db; }
 
-/* ▼ 追加: フィルターで除外された行のスタイル（グレーアウト） */
 tbody tr.filtered-out-row {
-    background-color: #f9f9f9 !important; /* 薄いグレー背景 */
-    color: #ccc !important;              /* 文字色を薄く */
+    background-color: #f9f9f9 !important;
+    color: #ccc !important;
 }
 tbody tr.filtered-out-row td {
     border-color: #eee;
 }
 tbody tr.filtered-out-row .editable-cell strong {
-    font-weight: normal; /* 太字を解除 */
+    font-weight: normal;
 }
 tbody tr.filtered-out-row .visibility-toggle {
-    opacity: 0.3;        /* 目のアイコンも薄く */
+    opacity: 0.3;
     cursor: default;
 }        
 tbody tr:nth-child(even) { background-color: #f8f9fa; }
@@ -144,16 +141,15 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
 
         .legal-notice { font-size: 11px; text-align: center; padding: 10px 0; color: #555; background: #f0f2f5; border-top: 1px solid #ccc; flex-shrink: 0; }
 #lastUpdated {
-    display: inline-block; /* 要素を横に並べるために指定 */
-    vertical-align: middle; /* 垂直方向の位置を中央に揃える */
+    display: inline-block;
+    vertical-align: middle;
     font-size: 12px;
-    margin-right: 2em; /* 「免責事項」との間にスペースを設ける */
-    /* margin-bottom: 10px; は不要なので削除 */
+    margin-right: 2em;
 }
 
 #legal-toggle {
-    display: inline-block; /* 要素を横に並べるために指定 */
-    vertical-align: middle; /* 垂直方向の位置を中央に揃える */
+    display: inline-block;
+    vertical-align: middle;
     cursor: pointer;
     font-weight: bold;
 }
@@ -164,6 +160,12 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
         .leaflet-popup-content .action-button:hover { background-color: #2980b9; }
 
         .loading { color: #7f8c8d; }
+
+        /* ▼追加: 分割設定モーダル用のスタイル */
+        #split-points-container .split-point-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        #split-points-container .split-point-item input { flex-grow: 1; }
+        #split-points-container .split-point-item .remove-split-btn { background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; }
+        #add-split-point-btn { background: #2ecc71; color: white; border: none; border-radius: 4px; padding: 6px 10px; cursor: pointer; }
 
         @media (max-width: 768px) {
             .mobile-only-tabs {
@@ -281,7 +283,11 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
                 <div id="file-list-panel-container" style="display: none; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                         <h4 style="font-size: 0.9em; color: #555; margin: 0;">読み込み済みファイル</h4>
-                        <button id="undoBtn" title="元に戻す" style="display: none; background: #f39c12; color: white; border: none; border-radius: 5px; padding: 4px 8px; font-size: 0.8em; cursor: pointer;">↩️戻す</button>
+                        <!-- ▼変更: 分割ボタンを追加 -->
+                        <div>
+                            <button id="splitByTimeBtn" title="測定時間で分割" style="display: none; background: #1abc9c; color: white; border: none; border-radius: 5px; padding: 4px 8px; font-size: 0.8em; cursor: pointer; margin-right: 5px;">✂️分割</button>
+                            <button id="undoBtn" title="元に戻す" style="display: none; background: #f39c12; color: white; border: none; border-radius: 5px; padding: 4px 8px; font-size: 0.8em; cursor: pointer;">↩️戻す</button>
+                        </div>
                     </div>
                     <div id="file-list-panel"></div>
                 </div>
@@ -477,9 +483,8 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
                         <strong>データの確認と操作</strong><br>
                         データは左の「データパネル」と右の「🗺️ 地図」「📈XYプロット」などに表示されます。
                         <ul>
-                            <li><b>データパネル</b>: ファイルごとの表示/非表示の切り替えや削除ができます。</li>
+                            <li><b>データパネル</b>: ファイルごとの表示/非表示の切り替えや削除ができます。時間情報を含むデータがある場合、「✂️分割」ボタンが表示され、測定時刻を基準にファイルを分割できます。</li>
                             <li><b>テーブル</b>: 測点の一覧です。測点名やアンテナ高のセルをダブルクリックすると値を直接編集できます。テーブルの「👁️」ボタンで個別の測点を一時的に非表示（間引き）できます。「💧基準面」プルダウンから、T.P.以外の基準水準面での標高（換算標高）を表示できます。</li>
-                             <!-- ▼修正: フィルター機能の説明を追加 -->
                             <li><b>テーブルヘッダーのクリック</b>: 「測定日時」または「アンテナ高」のヘッダーをクリックすると、表示するデータの範囲を絞り込むことができます。絞り込み中の項目はヘッダーが青色で表示されます。</li>
                             <li><b>🗺️地図</b>: 地理院地図上に測点の位置がプロットされます。マーカーをクリックすると詳細情報を確認でき、そこから非表示にすることも可能です。</li>
                             <li><b>📈XY/📉XZ/YZプロット</b>: 各平面での位置関係を確認できます。マウスホイールでズーム、ドラッグでパン（移動）ができます。XYプロットでは点を右クリックして非表示にできます。</li>
@@ -543,7 +548,6 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
         </div>
     </div>
     
-    <!-- ▼追加: フィルタリング設定用モーダル -->
     <div id="filter-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 500px; height: auto;">
             <div class="modal-header">
@@ -551,7 +555,6 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
-                <!-- 時間フィルター用 -->
                 <div id="time-filter-section" style="display: none;">
                     <p>表示する測定日時の範囲を指定してください。</p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
@@ -560,12 +563,11 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
                             <input type="datetime-local" id="filter-start-time" style="padding: 8px;">
                         </div>
                         <div class="control-group">
-                            <label for="filter-end-time">終了日時</label>
+                            <labFel for="filter-end-time">終了日時</label>
                             <input type="datetime-local" id="filter-end-time" style="padding: 8px;">
                         </div>
                     </div>
                 </div>
-                <!-- アンテナ高フィルター用 -->
                 <div id="height-filter-section" style="display: none;">
                     <p>表示するアンテナ高の範囲(m)を指定してください。</p>
                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
@@ -587,6 +589,35 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
             </div>
         </div>
     </div>
+    
+    <!-- ▼追加: 時間分割設定用モーダル -->
+    <div id="split-by-time-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px; height: auto;">
+            <div class="modal-header">
+                <h3>測定時間でファイルを分割</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px; overflow-y: visible;">
+                <div class="control-group" style="margin-bottom: 20px;">
+                    <label for="split-file-select">1. 分割するファイルを選択</label>
+                    <select id="split-file-select" style="padding: 8px;"></select>
+                </div>
+                <div class="control-group">
+                    <label>2. 分割する時刻を設定 (最大4つ)</label>
+                    <p style="font-size: 0.8em; color: #555; margin-bottom: 10px;">指定した時刻を区切りとして、ファイルを最大5つに分割します。</p>
+                    <div id="split-points-container">
+                        <!-- 分割点入力欄がここに追加されます -->
+                    </div>
+                    <button id="add-split-point-btn" style="margin-top: 10px;">＋ 分割点を追加</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="split-by-time-cancel" class="cancel-btn">キャンセル</button>
+                <button id="split-by-time-ok" class="ok-btn">実行</button>
+            </div>
+        </div>
+    </div>
+
 
     <div id="stats-modal" class="draggable">
         <div class="modal-header">
@@ -598,7 +629,6 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
             </div>
         </div>
         <div class="modal-body" id="stats-modal-body">
-            <!-- 統計結果のテーブルがここに挿入されます -->
         </div>
     </div>
 
@@ -639,7 +669,6 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
         let lastClusteredPointIds = new Set();
         let actionHistory = [];
         let contextMenuPointId = null;
-        // ▼追加: フィルタリング用変数
         let timeFilter = { start: null, end: null, active: false };
         let heightFilter = { min: null, max: null, active: false };
         let currentFilterType = null;
@@ -768,27 +797,22 @@ tbody tr:nth-child(even) { background-color: #f8f9fa; }
         }
         
        
-// ▼ 追加: ポイントがフィルター条件を満たしているか判定する関数
 function checkPointFilter(p) {
-    // 時間フィルターの判定
     if (timeFilter.active) {
-        if (!p.time) return false; // 時間情報がないデータは除外
+        if (!p.time) return false;
         const pointTime = new Date(p.time);
         if ((timeFilter.start && pointTime < timeFilter.start) || (timeFilter.end && pointTime > timeFilter.end)) {
             return false;
         }
     }
-    // アンテナ高フィルターの判定
     if (heightFilter.active) {
         if ((heightFilter.min !== null && p.antennaHeight < heightFilter.min) || (heightFilter.max !== null && p.antennaHeight > heightFilter.max)) {
             return false;
         }
     }
-    return true; // フィルターにかからなければ表示（true）
+    return true;
 }
 
- // ▼修正: フィルタリングロジックをupdateUIに追加
-// ▼ 修正: updateUI関数
 function updateUI() {
     allPoints = [];
     const sortedFileNames = Object.keys(loadedFiles).sort();
@@ -798,10 +822,8 @@ function updateUI() {
 
     activePoints = allPoints.filter(p => {
         const fileInfo = loadedFiles[p.fileName];
-        // ファイル自体が非表示、または個別に非表示にされている場合は除外
         if (!fileInfo || !fileInfo.visible || p.isHidden) return false;
 
-        // フィルター条件（時間・高さ）を満たしているかチェック
         return checkPointFilter(p);
     });
     
@@ -826,14 +848,11 @@ function updateUI() {
             }
         }
         
-        // ▼修正: displayTableでフィルター状態に応じてヘッダーのスタイルを変更
-        // ▼ 修正: displayTable関数
 function displayTable(points, highlightPointId) {
     const datumSelect = document.getElementById('datum-select');
     const selectedDatumOffset = parseFloat(datumSelect.value);
     const selectedDatumLabel = datumSelect.options[datumSelect.selectedIndex].text.match(/\((.*?)\)/)?.[1] || '換算';
     
-    // ヘッダー定義: アイコン(🔍)を追加
     let tableHTML = `<table><thead><tr>
         <th><span id="toggle-all-visibility" title="全測点の表示/非表示を切り替え" style="cursor: pointer;">👁️</span></th>
         <th class="mobile-hidden-col">ファイル名</th>
@@ -859,7 +878,6 @@ function displayTable(points, highlightPointId) {
             const highlightClass = p.id === highlightPointId ? 'highlighted' : '';
             const hiddenClass = p.isHidden || !loadedFiles[p.fileName] || !loadedFiles[p.fileName].visible ? 'hidden-row' : '';
             
-            // ▼ 追加: フィルター条件による除外判定
             const isFilteredOut = !checkPointFilter(p);
             const filteredClass = isFilteredOut ? 'filtered-out-row' : '';
 
@@ -871,7 +889,6 @@ function displayTable(points, highlightPointId) {
             const correctedEle = p.antennaHeight - pole;
             const convertedDatumElevation = correctedEle - selectedDatumOffset;
             
-            // 行クラスに filteredClass を追加
             tableHTML += `<tr data-id="${p.id}" class="${highlightClass} ${inSectionClass} ${hiddenClass} ${filteredClass}">
                 <td><span class="visibility-toggle" title="表示/非表示" onclick="${isFilteredOut ? '' : `togglePointVisibility('${p.id}')`}">${p.isHidden ? '🙈' : '👁️'}</span></td>
                 <td class="mobile-hidden-col">${p.fileName}</td>
@@ -889,7 +906,6 @@ function displayTable(points, highlightPointId) {
     
     document.getElementById('tableContainer').innerHTML = tableHTML;
     
-    // イベントリスナーの再設定
     const toggleAllBtn = document.getElementById('toggle-all-visibility');
     if (toggleAllBtn) {
         toggleAllBtn.addEventListener('click', () => {
@@ -987,9 +1003,37 @@ function displayTable(points, highlightPointId) {
         
         window.focusOnPoint = (event, pointId) => { if (!pointId || (event && event.target.tagName.toLowerCase() === 'input')) return; if (window.getSelection().toString()) return; let masterPoint = null; allPoints.forEach(p => { if (p.id === pointId) masterPoint = p; }); if (!masterPoint) return; rerenderUI(pointId); if (!masterPoint.isHidden) { const point = activePoints.find(p => p.id === pointId); if (point?.marker) { point.marker.openPopup(); map.setView(point.marker.getLatLng(), 18); } } const row = document.querySelector(`tr[data-id="${pointId}"]`); if (row) { const tableContainer = document.getElementById('tableContainer'); const containerRect = tableContainer.getBoundingClientRect(); const rowRect = row.getBoundingClientRect(); if (rowRect.top < containerRect.top || rowRect.bottom > containerRect.bottom) { const desiredScrollTop = tableContainer.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2); tableContainer.scrollTo({ top: desiredScrollTop, behavior: 'auto' }); } } };
         function handleTableCellEdit(e) { const cell = e.target.closest('.editable-cell'); if (!cell || cell.querySelector('input')) return; const originalText = cell.querySelector('strong')?.textContent || cell.textContent; const field = cell.dataset.field; const pointId = cell.parentElement.dataset.id; cell.innerHTML = `<input type="text" value="${originalText.trim()}" />`; const input = cell.querySelector('input'); input.focus(); input.select(); const save = () => { let masterPoint = null; allPoints.forEach(p => { if (p.id === pointId) masterPoint = p; }); if (!masterPoint) return; const newValue = input.value; let changed = false; if (field === 'antennaHeight') { const num = parseFloat(newValue); if (!isNaN(num) && masterPoint.antennaHeight.toFixed(3) !== num.toFixed(3)) { masterPoint.antennaHeight = num; changed = true; } } else { if (masterPoint.name !== newValue) { masterPoint.name = newValue; changed = true; } } if (changed) { masterPoint.modifiedFields[field] = true; } updateUI(); rerenderUI(pointId); }; input.addEventListener('blur', save); input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { input.removeEventListener('blur', save); rerenderUI(pointId); } }); }
-        function updateFileListUI() { const panel = document.getElementById('file-list-panel'); document.getElementById('file-list-panel-container').style.display = Object.keys(loadedFiles).length > 0 ? 'block' : 'none'; panel.innerHTML = ''; for (const f in loadedFiles) { const item = document.createElement('div'); item.className = 'file-item'; item.innerHTML = `<input type="checkbox" id="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" ${loadedFiles[f].visible?'checked':''}> <label for="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" title="${f}">${f}</label> <button class="delete-btn" title="削除">&times;</button>`; panel.appendChild(item); item.querySelector('input').addEventListener('change', (e) => { loadedFiles[f].visible = e.target.checked; updateUI(); }); item.querySelector('button').addEventListener('click', () => { delete loadedFiles[f]; updateFileListUI(); updateUI(); }); } }
         
-        // ▼追加: フィルター関連の関数群
+        // ▼修正: updateFileListUI に分割ボタンの表示/非表示ロジックを追加
+        function updateFileListUI() {
+            const panel = document.getElementById('file-list-panel');
+            const panelContainer = document.getElementById('file-list-panel-container');
+            const splitBtn = document.getElementById('splitByTimeBtn');
+
+            panelContainer.style.display = Object.keys(loadedFiles).length > 0 ? 'block' : 'none';
+            panel.innerHTML = '';
+
+            for (const f in loadedFiles) {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `<input type="checkbox" id="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" ${loadedFiles[f].visible?'checked':''}> <label for="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" title="${f}">${f}</label> <button class="delete-btn" title="削除">&times;</button>`;
+                panel.appendChild(item);
+                item.querySelector('input').addEventListener('change', (e) => {
+                    loadedFiles[f].visible = e.target.checked;
+                    updateUI();
+                });
+                item.querySelector('button').addEventListener('click', () => {
+                    delete loadedFiles[f];
+                    updateFileListUI();
+                    updateUI();
+                });
+            }
+
+            // 分割ボタンの表示判定
+            const hasTimeData = Object.values(loadedFiles).some(file => file.points.some(p => p.time));
+            splitBtn.style.display = hasTimeData ? 'inline-block' : 'none';
+        }
+
         function openFilterModal(type) {
             if (allPoints.length === 0) {
                 alert("絞り込み対象のデータがありません。");
@@ -1084,6 +1128,118 @@ function displayTable(points, highlightPointId) {
                 heightFilter = { min: null, max: null, active: false };
             }
             document.getElementById('filter-modal').style.display = 'none';
+            updateUI();
+        }
+
+        // ▼追加: 時間分割関連の関数群
+        function addSplitPointInput() {
+            const container = document.getElementById('split-points-container');
+            if (container.children.length >= 4) {
+                alert('最大で5分割（分割点4つ）までです。');
+                return;
+            }
+            const newItem = document.createElement('div');
+            newItem.className = 'split-point-item';
+            newItem.innerHTML = `
+                <input type="datetime-local" style="padding: 8px;">
+                <button class="remove-split-btn" title="この分割点を削除">&times;</button>
+            `;
+            newItem.querySelector('.remove-split-btn').addEventListener('click', () => {
+                newItem.remove();
+            });
+            container.appendChild(newItem);
+        }
+
+        function openSplitByTimeModal() {
+            const modal = document.getElementById('split-by-time-modal');
+            const select = document.getElementById('split-file-select');
+            const container = document.getElementById('split-points-container');
+
+            select.innerHTML = '';
+            const filesWithTime = Object.keys(loadedFiles).filter(f => loadedFiles[f].points.some(p => p.time));
+            if (filesWithTime.length === 0) {
+                alert('分割できる時間情報付きのファイルがありません。');
+                return;
+            }
+            filesWithTime.forEach(f => {
+                const option = document.createElement('option');
+                option.value = f;
+                option.textContent = f;
+                select.appendChild(option);
+            });
+            
+            container.innerHTML = '';
+            addSplitPointInput();
+
+            modal.style.display = 'flex';
+        }
+
+        function performSplitByTime() {
+            const fileName = document.getElementById('split-file-select').value;
+            if (!fileName) return;
+
+            const splitInputs = document.querySelectorAll('#split-points-container input');
+            const splitTimes = Array.from(splitInputs)
+                .map(input => input.value)
+                .filter(value => value !== '')
+                .map(value => new Date(value));
+
+            if (splitTimes.length === 0) {
+                alert('少なくとも1つの分割時刻を入力してください。');
+                return;
+            }
+            
+            // 時刻を昇順にソート
+            splitTimes.sort((a, b) => a - b);
+
+            const targetFile = loadedFiles[fileName];
+            const sortedPoints = [...targetFile.points].sort((a, b) => {
+                if (!a.time || !b.time) return 0;
+                return new Date(a.time) - new Date(b.time);
+            });
+
+            const chunks = [];
+            let lastIndex = 0;
+
+            splitTimes.forEach(time => {
+                let splitIndex = sortedPoints.findIndex((p, idx) => idx >= lastIndex && p.time && new Date(p.time) >= time);
+                if (splitIndex === -1) { // 区切り時刻以降の点がない場合
+                    splitIndex = sortedPoints.length;
+                }
+                
+                const chunk = sortedPoints.slice(lastIndex, splitIndex);
+                if (chunk.length > 0) {
+                    chunks.push(chunk);
+                }
+                lastIndex = splitIndex;
+            });
+
+            const lastChunk = sortedPoints.slice(lastIndex);
+            if (lastChunk.length > 0) {
+                chunks.push(lastChunk);
+            }
+            
+            if (chunks.length <= 1) {
+                alert('ファイルは分割されませんでした。時刻の範囲を確認してください。');
+                return;
+            }
+            
+            // 元のファイルを削除
+            delete loadedFiles[fileName];
+
+            const baseFileName = fileName.replace(/\.[^/.]+$/, ""); // 拡張子を削除
+            chunks.forEach((chunk, index) => {
+                const newFileName = `${baseFileName}_part${index + 1}`;
+                loadedFiles[newFileName] = {
+                    points: chunk.map(p => ({...p, fileName: newFileName})),
+                    visible: true,
+                    color: COLORS[(Object.keys(loadedFiles).length + index) % COLORS.length],
+                    gpxContent: null
+                };
+            });
+            
+            document.getElementById('split-by-time-modal').style.display = 'none';
+            updateFileListUI();
             updateUI();
         }
         
@@ -1389,7 +1545,14 @@ function displayTable(points, highlightPointId) {
             document.addEventListener('mousemove', (e) => { if (isDragging) { statsModal.style.left = `${e.clientX - offsetX}px`; statsModal.style.top = `${e.clientY - offsetY}px`; } });
             document.addEventListener('mouseup', () => { isDragging = false; statsModal.style.userSelect = ''; });
 
-            // ▼追加: フィルターモーダルのイベントリスナー
+            // ▼追加: 分割機能のイベントリスナー
+            document.getElementById('splitByTimeBtn').addEventListener('click', openSplitByTimeModal);
+            const splitModal = document.getElementById('split-by-time-modal');
+            splitModal.querySelector('.modal-close').addEventListener('click', () => splitModal.style.display = 'none');
+            document.getElementById('split-by-time-cancel').addEventListener('click', () => splitModal.style.display = 'none');
+            document.getElementById('split-by-time-ok').addEventListener('click', performSplitByTime);
+            document.getElementById('add-split-point-btn').addEventListener('click', addSplitPointInput);
+
             const filterModal = document.getElementById('filter-modal');
             filterModal.querySelector('.modal-close').addEventListener('click', () => filterModal.style.display = 'none');
             document.getElementById('filter-cancel-btn').addEventListener('click', () => filterModal.style.display = 'none');
