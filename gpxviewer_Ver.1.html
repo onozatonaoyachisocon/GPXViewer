@@ -1412,7 +1412,79 @@ function displayTable(points, highlightPointId) {
         function performClusteringAndStatistics(xyToleranceCm, zToleranceCm) { if (activePoints.length === 0) { alert("処理対象のデータがありません。"); return; } const xyTolerance = xyToleranceCm / 100.0; const zTolerance = zToleranceCm / 100.0; const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const allCurrentPoints = []; for(const f in loadedFiles) { allCurrentPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden)); } const processedPoints = allCurrentPoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole, processed: false })); const groups = []; lastClusteredPointIds.clear(); for (let i = 0; i < processedPoints.length; i++) { const point = processedPoints[i]; if (point.processed) continue; const newGroup = []; const queue = [point]; point.processed = true; while (queue.length > 0) { const current = queue.shift(); newGroup.push(current); for (let j = 0; j < processedPoints.length; j++) { const other = processedPoints[j]; if (other.processed) continue; const dx = current.x - other.x; const dy = current.y - other.y; const dz = current.correctedEle - other.correctedEle; const distXY = Math.sqrt(dx * dx + dy * dy); const distZ = Math.abs(dz); if (distXY <= xyTolerance && distZ <= zTolerance) { other.processed = true; queue.push(other); } } } if (newGroup.length > 1) { groups.push(newGroup); newGroup.forEach(p => lastClusteredPointIds.add(p.id)); } } if (groups.length === 0) { alert("設定された閾値内で、複数の測定記録がある地点が見つかりませんでした。閾値を広げて試してください。"); return; } lastClusterResults = groups.map((group, index) => { const xCoords = group.map(p => p.x); const yCoords = group.map(p => p.y); const eleCoords = group.map(p => p.correctedEle); const meanX = getMean(xCoords); const meanY = getMean(yCoords); const meanEle = getMean(eleCoords); const commonName = findLongestCommonPrefix(group.map(p => p.name)); return { groupId: commonName || `グループ ${index + 1}`, originalPointIds: group.map(p => p.id), points: group.map(p => p.name), count: group.length, meanX: meanX, meanY: meanY, meanEle: meanEle, stdDevX: getStdDev(xCoords, meanX), stdDevY: getStdDev(yCoords, meanY), stdDevEle: getStdDev(eleCoords, meanEle), rangeX: Math.max(...xCoords) - Math.min(...xCoords), rangeY: Math.max(...yCoords) - Math.min(...yCoords), color: COLORS[index % COLORS.length] }; }); displayGroupStatisticsModal(lastClusterResults); displayGroupStatsOnMap(lastClusterResults, sys); rerenderUI(); }
         function displayGroupStatisticsModal(results) { const modal = document.getElementById('stats-modal'); const body = document.getElementById('stats-modal-body'); let tableHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;"><thead><tr style="background-color: #2c3e50; color: white;"><th style="padding: 8px; border: 1px solid #ddd;">グループID</th><th style="padding: 8px; border: 1px solid #ddd;">回数</th><th style="padding: 8px; border: 1px solid #ddd;">平均X (m)</th><th style="padding: 8px; border: 1px solid #ddd;">平均Y (m)</th><th style="padding: 8px; border: 1px solid #ddd;">平均標高 (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="X座標の標準偏差">σX (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="Y座標の標準偏差">σY (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="標高の標準偏差">σ標高 (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="水平方向の最大最小の差">範囲XY (m)</th></tr></thead><tbody>`; results.forEach((r, index) => { const horizontalRange = Math.sqrt(r.rangeX**2 + r.rangeY**2); const originalNames = r.points.join(', '); tableHTML += `<tr data-group-index="${index}"><td style="padding: 8px; border: 1px solid #ddd; cursor: help;" title="含まれる測点: ${originalNames}"><span class="color-indicator" style="background-color:${r.color};"></span>${r.groupId}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.count}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanX.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanY.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanEle.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevX.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevY.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevEle.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${horizontalRange.toFixed(4)}</td></tr>`; }); tableHTML += `</tbody></table>`; body.innerHTML = tableHTML; modal.style.display = 'flex'; }
         function displayGroupStatsOnMap(results, systemId) { if (statsLayerGroup) { statsLayerGroup.clearLayers(); } else { statsLayerGroup = L.layerGroup().addTo(map); } results.forEach(r => { const { lat, lon } = xyToLatLon(r.meanX, r.meanY, systemId); const horizontalStdDev = Math.sqrt(r.stdDevX**2 + r.stdDevY**2); const iconHtml = `<span style="font-size: 24px; color: ${r.color}; text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;">★</span>`; const avgMarker = L.marker([lat, lon], { icon: L.divIcon({ html: iconHtml, className: 'text-marker', iconSize: [24, 24], iconAnchor: [12, 12] }) }).bindPopup(`<b>${r.groupId} (平均値)</b><br>測定回数: ${r.count}<br>水平標準偏差 (σXY): ${horizontalStdDev.toFixed(4)}m`); statsLayerGroup.addLayer(avgMarker); if (horizontalStdDev > 0) { const circle = L.circle([lat, lon], { radius: horizontalStdDev, color: r.color, fillColor: r.color, fillOpacity: 0.3 }); statsLayerGroup.addLayer(circle); } }); }
-        function addAveragesToData() { if (!lastClusterResults) { alert("統計処理が実行されていません。"); return; } const sys = document.getElementById('coordSystem').value; const avgFileName = "統計処理_平均値"; const ungroupedFileName = "統計処理_対象外データ"; const newAvgPoints = lastClusterResults.map((r, index) => { const { lat, lon } = xyToLatLon(r.meanX, r.meanY, sys); return { id: `${avgFileName}-${index}`, name: `${r.groupId} (平均)`, lat: lat, lon: lon, antennaHeight: r.meanEle, time: new Date().toISOString(), cmtText: `(${r.count}点の平均値)`, fileName: avgFileName, modifiedFields: {}, isHidden: false, originalCoordSystemType: '' }; }); let allOriginalPoints = []; for(const f in loadedFiles) { allOriginalPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden)); } const newUngroupedPoints = allOriginalPoints.filter(p => !lastClusteredPointIds.has(p.id)).map(p => ({ ...p, fileName: ungroupedFileName, id: `${ungroupedFileName}-${p.id}` })); if (loadedFiles[avgFileName] || loadedFiles[ungroupedFileName]) { if(!confirm(`統計処理データは既に存在します。上書きしますか？`)) return; } loadedFiles[avgFileName] = { points: newAvgPoints, visible: true, color: '#ff00ff', gpxContent: null }; if(newUngroupedPoints.length > 0) { loadedFiles[ungroupedFileName] = { points: newUngroupedPoints, visible: true, color: '#888888', gpxContent: null }; } Object.keys(loadedFiles).forEach(fileName => { if (fileName !== avgFileName && fileName !== ungroupedFileName) { loadedFiles[fileName].visible = false; } }); alert(`「${avgFileName}」と「${ungroupedFileName}」が追加されました。\n元のデータは非表示になっています。`); updateFileListUI(); updateUI(); document.getElementById('stats-modal').style.display = 'none'; if (statsLayerGroup) statsLayerGroup.clearLayers(); lastClusterResults = null; rerenderUI(); }
+        
+
+function addAveragesToData() {
+            if (!lastClusterResults) {
+                alert("統計処理が実行されていません。");
+                return;
+            }
+            const sys = document.getElementById('coordSystem').value;
+            // ▼修正点: 現在のポール高を取得
+            const pole = parseFloat(document.getElementById('poleHeight').value) || 0;
+            const avgFileName = "統計処理_平均値";
+            const ungroupedFileName = "統計処理_対象外データ";
+
+            const newAvgPoints = lastClusterResults.map((r, index) => {
+                const { lat, lon } = xyToLatLon(r.meanX, r.meanY, sys);
+                return {
+                    id: `${avgFileName}-${index}`,
+                    name: `${r.groupId} (平均)`,
+                    lat: lat,
+                    lon: lon,
+                    // ▼修正点: 平均標高にポール高を足し戻してアンテナ高とする
+                    antennaHeight: r.meanEle + pole,
+                    time: new Date().toISOString(),
+                    cmtText: `(${r.count}点の平均値)`,
+                    fileName: avgFileName,
+                    modifiedFields: {},
+                    isHidden: false,
+                    originalCoordSystemType: ''
+                };
+            });
+
+            let allOriginalPoints = [];
+            for (const f in loadedFiles) {
+                allOriginalPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden));
+            }
+            const newUngroupedPoints = allOriginalPoints.filter(p => !lastClusteredPointIds.has(p.id)).map(p => ({ ...p,
+                fileName: ungroupedFileName,
+                id: `${ungroupedFileName}-${p.id}`
+            }));
+
+            if (loadedFiles[avgFileName] || loadedFiles[ungroupedFileName]) {
+                if (!confirm(`統計処理データは既に存在します。上書きしますか？`)) return;
+            }
+
+            loadedFiles[avgFileName] = {
+                points: newAvgPoints,
+                visible: true,
+                color: '#ff00ff',
+                gpxContent: null
+            };
+            if (newUngroupedPoints.length > 0) {
+                loadedFiles[ungroupedFileName] = {
+                    points: newUngroupedPoints,
+                    visible: true,
+                    color: '#888888',
+                    gpxContent: null
+                };
+            }
+
+            Object.keys(loadedFiles).forEach(fileName => {
+                if (fileName !== avgFileName && fileName !== ungroupedFileName) {
+                    loadedFiles[fileName].visible = false;
+                }
+            });
+
+            alert(`「${avgFileName}」と「${ungroupedFileName}」が追加されました。\n元のデータは非表示になっています。`);
+            updateFileListUI();
+            updateUI();
+            document.getElementById('stats-modal').style.display = 'none';
+            if (statsLayerGroup) statsLayerGroup.clearLayers();
+            lastClusterResults = null;
+            rerenderUI();
+        }
         
         function initialize() {
             coordinateSystems.forEach(sys => { const projDef = `+proj=tmerc +lat_0=${sys.lat0} +lon_0=${sys.lon0} +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs`; proj4.defs(`EPSG:${sys.epsg}`, projDef); });
