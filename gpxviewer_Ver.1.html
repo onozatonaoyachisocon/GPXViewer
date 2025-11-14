@@ -11,7 +11,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; background: #f0f2f5; }
-        .header { background: #2c3e50; color: white; padding: 0 20px; height: var(--header-height); display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 20; }F
+        .header { background: #2c3e50; color: white; padding: 0 20px; height: var(--header-height); display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 20; }
         .header h1 { flex-grow: 1; font-size: 1.5em; }
         .header .header-buttons { margin-left: auto; display: flex; align-items: center; gap: 10px; }
         .header .header-buttons button { background: #3498db; color: white; border: none; border-radius: 5px; padding: 8px 12px; font-size: 0.9em; cursor: pointer; white-space: nowrap; }
@@ -27,7 +27,7 @@
         .tab-bar { flex-shrink: 0; display: flex; background-color: #ecf0f1; border-bottom: 2px solid #bdc3c7; flex-wrap: wrap;}
         .tab-button { padding: 0 15px; height: var(--tab-height); border: none; background: #ecf0f1; cursor: pointer; font-size: 0.9em; color: #7f8c8d; border-bottom: 3px solid transparent; }
        
- .tab-button.active { 
+        .tab-button.active { 
             background: #fff; 
             color: #2c3e50; 
             font-weight: bold; 
@@ -56,7 +56,6 @@
         #xyPlot.crosshair, #xzPlot.editable-section, #yzPlot.editable-section { cursor: crosshair; }
         #xyPlot.editable-section, #xzPlot.editable-section, #yzPlot.editable-section { cursor: pointer; }
 
-
         #plot-context-menu { position: absolute; display: none; background: #fff; border: 1px solid #ccc; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); padding: 5px 0; border-radius: 4px; z-index: 1000; font-size: 0.9em;}
         #plot-context-menu button { display: block; width: 100%; padding: 8px 15px; border: none; background: none; text-align: left; cursor: pointer; }
         #plot-context-menu button:hover { background: #f0f0f0; }
@@ -74,8 +73,37 @@
         table { width: 100%; border-collapse: collapse; background: white; font-size: 0.8em; }
         thead { position: sticky; top: 0; background: #34495e; color: white; z-index: 10; }
         th, td { padding: 8px 10px; text-align: left; border: 1px solid #ddd; white-space: nowrap; user-select: text; }
+        /* ▼追加: フィルタリング用ヘッダースタイル */
+        th.filterable-header { cursor: pointer; }
+        th.filterable-header:hover { background-color: #4a627a; }
+        th.filtered-header { color: #4ecdc4; font-weight: bold; }
+        th.filtered-header::after { content: " 絞込中"; font-size: 0.8em; }
         .visibility-toggle { cursor: pointer; user-select: none; }
-        tbody tr:nth-child(even) { background-color: #f8f9fa; }
+th.filterable-header { cursor: pointer; position: relative; }
+th.filterable-header:hover { background-color: #e0eaf5; color: #2c3e50; }
+th.filterable-header .filter-icon { margin-left: 5px; font-size: 1.1em; vertical-align: text-bottom; opacity: 0.5; }
+th.filterable-header:hover .filter-icon { opacity: 1; }
+
+/* フィルター適用中のスタイル（青文字＋太字） */
+th.filtered-header { color: #3498db !important; font-weight: bold; }
+th.filtered-header .filter-icon { opacity: 1; color: #3498db; }
+
+/* ▼ 追加: フィルターで除外された行のスタイル（グレーアウト） */
+tbody tr.filtered-out-row {
+    background-color: #f9f9f9 !important; /* 薄いグレー背景 */
+    color: #ccc !important;              /* 文字色を薄く */
+}
+tbody tr.filtered-out-row td {
+    border-color: #eee;
+}
+tbody tr.filtered-out-row .editable-cell strong {
+    font-weight: normal; /* 太字を解除 */
+}
+tbody tr.filtered-out-row .visibility-toggle {
+    opacity: 0.3;        /* 目のアイコンも薄く */
+    cursor: default;
+}        
+tbody tr:nth-child(even) { background-color: #f8f9fa; }
         tbody tr.hidden-row { opacity: 0.5; background-color: #e9ecef !important; text-decoration: line-through; }
         tbody tr.highlighted { background-color: #aed6f1 !important; }
         tbody tr.in-section { background-color: #e8dff5 !important; font-weight: bold; }
@@ -114,19 +142,21 @@
         #help-modal ul li { margin-bottom: 5px; }
         #help-modal small { color: #555; }
 
-.legal-notice { font-size: 11px; text-align: center; padding: 10px 0; color: #555; background: #f0f2f5; border-top: 1px solid #ccc; flex-shrink: 0; }
-        #lastUpdated {
-            display: inline-block; /* 要素を横に並べるために指定 */
-            vertical-align: middle; /* 垂直方向の位置を中央に揃える */
-            font-size: 12px;
-            margin-right: 2em; /* 「免責事項」との間にスペースを設ける */
-        }
-        #legal-toggle {
-            display: inline-block; /* 要素を横に並べるために指定 */
-            vertical-align: middle; /* 垂直方向の位置を中央に揃える */
-            cursor: pointer;
-            font-weight: bold;
-        }
+        .legal-notice { font-size: 11px; text-align: center; padding: 10px 0; color: #555; background: #f0f2f5; border-top: 1px solid #ccc; flex-shrink: 0; }
+#lastUpdated {
+    display: inline-block; /* 要素を横に並べるために指定 */
+    vertical-align: middle; /* 垂直方向の位置を中央に揃える */
+    font-size: 12px;
+    margin-right: 2em; /* 「免責事項」との間にスペースを設ける */
+    /* margin-bottom: 10px; は不要なので削除 */
+}
+
+#legal-toggle {
+    display: inline-block; /* 要素を横に並べるために指定 */
+    vertical-align: middle; /* 垂直方向の位置を中央に揃える */
+    cursor: pointer;
+    font-weight: bold;
+}
         #legal-details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
         #legal-details p { margin-bottom: 5px; }
         .color-indicator { display: inline-block; width: 12px; height: 12px; border: 1px solid #ccc; margin-right: 5px; vertical-align: middle; }
@@ -135,7 +165,7 @@
 
         .loading { color: #7f8c8d; }
 
-@media (max-width: 768px) {
+        @media (max-width: 768px) {
             .mobile-only-tabs {
                 display: flex;
                 height: auto;
@@ -159,13 +189,12 @@
             .left-panel.hidden-on-mobile, .right-panel.hidden-on-mobile { display: none; }
             .right-panel .tab-bar { display: none; }
             
-            .compact-controls {
+           .compact-controls {
                 grid-template-columns: repeat(3, 1fr);
             }
             .control-group.mobile-span-2 {
                 grid-column: span 2;
             }
-            
             .control-group.mobile-hidden { display: none; }
             .mobile-hidden-col { display: none; }
             
@@ -450,6 +479,8 @@
                         <ul>
                             <li><b>データパネル</b>: ファイルごとの表示/非表示の切り替えや削除ができます。</li>
                             <li><b>テーブル</b>: 測点の一覧です。測点名やアンテナ高のセルをダブルクリックすると値を直接編集できます。テーブルの「👁️」ボタンで個別の測点を一時的に非表示（間引き）できます。「💧基準面」プルダウンから、T.P.以外の基準水準面での標高（換算標高）を表示できます。</li>
+                             <!-- ▼修正: フィルター機能の説明を追加 -->
+                            <li><b>テーブルヘッダーのクリック</b>: 「測定日時」または「アンテナ高」のヘッダーをクリックすると、表示するデータの範囲を絞り込むことができます。絞り込み中の項目はヘッダーが青色で表示されます。</li>
                             <li><b>🗺️地図</b>: 地理院地図上に測点の位置がプロットされます。マーカーをクリックすると詳細情報を確認でき、そこから非表示にすることも可能です。</li>
                             <li><b>📈XY/📉XZ/YZプロット</b>: 各平面での位置関係を確認できます。マウスホイールでズーム、ドラッグでパン（移動）ができます。XYプロットでは点を右クリックして非表示にできます。</li>
                             <li><b>🌐3Dプロット</b>: 測点を3次元空間にプロットします。マウス操作で自由に回転・ズーム・パンが可能です。</li>
@@ -512,6 +543,51 @@
         </div>
     </div>
     
+    <!-- ▼追加: フィルタリング設定用モーダル -->
+    <div id="filter-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px; height: auto;">
+            <div class="modal-header">
+                <h3 id="filter-modal-title">フィルター設定</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <!-- 時間フィルター用 -->
+                <div id="time-filter-section" style="display: none;">
+                    <p>表示する測定日時の範囲を指定してください。</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div class="control-group">
+                            <label for="filter-start-time">開始日時</label>
+                            <input type="datetime-local" id="filter-start-time" style="padding: 8px;">
+                        </div>
+                        <div class="control-group">
+                            <label for="filter-end-time">終了日時</label>
+                            <input type="datetime-local" id="filter-end-time" style="padding: 8px;">
+                        </div>
+                    </div>
+                </div>
+                <!-- アンテナ高フィルター用 -->
+                <div id="height-filter-section" style="display: none;">
+                    <p>表示するアンテナ高の範囲(m)を指定してください。</p>
+                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div class="control-group">
+                            <label for="filter-min-height">最小値</label>
+                            <input type="number" id="filter-min-height" step="0.001" style="padding: 8px;">
+                        </div>
+                        <div class="control-group">
+                            <label for="filter-max-height">最大値</label>
+                            <input type="number" id="filter-max-height" step="0.001" style="padding: 8px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="filter-reset-btn" class="cancel-btn" style="margin-right: auto; background-color: #e74c3c;">フィルターをリセット</button>
+                <button id="filter-cancel-btn" class="cancel-btn">キャンセル</button>
+                <button id="filter-ok-btn" class="ok-btn">適用</button>
+            </div>
+        </div>
+    </div>
+
     <div id="stats-modal" class="draggable">
         <div class="modal-header">
             <h3 style="margin-right: auto;">近接点の統計処理結果</h3>
@@ -526,17 +602,16 @@
         </div>
     </div>
 
-
-    <footer class="legal-notice">
-      <div id="lastUpdated"></div>
-      <div id="legal-toggle">免責事項 (クリックで表示)</div>
-      <div id="legal-details">
-        <p class="copyright" style="font-weight: bold;">Copyright &copy; 2025 (株)地圏総合コンサルタント All Rights Reserved.</p>
-        <p class="developer" style="font-size: 11px;">Developed by: Naoya.Onozato</p>
-        <p>本サービスの利用によって生じたいかなる損害についても、作成者は一切の責任を負いません。</p>
-        <p>本サービスは以下のオープンソースライブラリおよび公的機関のデータを使用しています:<br>- 地図データ: © 国土地理院<br>- ライブラリ: Leaflet, Chart.js, proj4js, Plotly.js</p>
-      </div>
-    </footer>
+<footer class="legal-notice">
+  <div id="lastUpdated"></div>
+  <div id="legal-toggle">免責事項 (クリックで表示)</div>
+  <div id="legal-details">
+    <p class="copyright" style="font-weight: bold;">Copyright &copy; 2025 (株)地圏総合コンサルタント All Rights Reserved.</p>
+    <p class="developer" style="font-size: 11px;">Developed by: Naoya.Onozato</p>
+    <p>本サービスの利用によって生じたいかなる損害についても、作成者は一切の責任を負いません。</p>
+    <p>本サービスは以下のオープンソースライブラリおよび公的機関のデータを使用しています:<br>- 地図データ: © 国土地理院<br>- ライブラリ: Leaflet, Chart.js, proj4js, Plotly.js</p>
+  </div>
+</footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
@@ -564,6 +639,10 @@
         let lastClusteredPointIds = new Set();
         let actionHistory = [];
         let contextMenuPointId = null;
+        // ▼追加: フィルタリング用変数
+        let timeFilter = { start: null, end: null, active: false };
+        let heightFilter = { min: null, max: null, active: false };
+        let currentFilterType = null;
         
         const COLORS = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#fabebe', '#008080', '#e6beff', '#9A6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075'];
         const getMean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -654,37 +733,6 @@
 ]}
         // ▲▲▲▲▲ ここまで、お手持ちのGeoJSONデータを貼り付けてください ▲▲▲▲▲
 
-        function pointInPolygon(point, vs) {
-            const x = point[0], y = point[1];
-            let inside = false;
-            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-                const xi = vs[i][0], yi = vs[i][1];
-                const xj = vs[j][0], yj = vs[j][1];
-                const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-                if (intersect) inside = !inside;
-            }
-            return inside;
-        }
-
-        function getPrefectureFromLatLng(lat, lon) {
-            const point = [lon, lat];
-            for (const feature of prefecturesGeoJSON.features) {
-                const geom = feature.geometry;
-                if (geom.type === 'Polygon') {
-                    if (pointInPolygon(point, geom.coordinates[0])) {
-                        return feature.properties.name_ja;
-                    }
-                } else if (geom.type === 'MultiPolygon') {
-                    for (const polygon of geom.coordinates) {
-                        if (pointInPolygon(point, polygon[0])) {
-                            return feature.properties.name_ja;
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
         function parseCSVLine(line) { const result = []; let current = ''; let inQuotes = false; for (let i = 0; i < line.length; i++) { const char = line[i]; if (char === '"' && (i === 0 || line[i-1] !== '\\')) { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; } } else if ((char === ',' || char === '\t') && !inQuotes) { result.push(current.trim().replace(/^"|"$/g, '')); current = ''; } else { current += char; } } result.push(current.trim().replace(/^"|"$/g, '')); return result; }
         function latLonToXY(lat, lon, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [y, x] = proj4('EPSG:4326', `EPSG:${system.epsg}`, [lon, lat]); return { x, y }; }
         function xyToLatLon(x, y, systemId) { const system = coordinateSystems.find(s => s.num == systemId); if (!system) throw new Error(`座標系 ${systemId} が見つかりません。`); const [lon, lat] = proj4(`EPSG:${system.epsg}`, 'EPSG:4326', [y, x]); return { lat, lon }; }
@@ -693,46 +741,7 @@
         function processCsvPoints(csvText, fileName, coordSystemId) { const lines = csvText.trim().split(/\r?\n/); const headerLineTest = lines[0].toLowerCase(); const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point'); const dataLines = hasHeader ? lines.slice(1) : lines; const points = []; for (let i = 0; i < dataLines.length; i++) { const values = parseCSVLine(dataLines[i]); if (values.length < 3 || values.some(v => v === '')) continue; const name = values[0]; const val1 = parseFloat(values[1]); const val2 = parseFloat(values[2]); const antennaHeight = values.length > 3 ? parseFloat(values[values.length - 1]) : 0; if (!name || isNaN(val1) || isNaN(val2) || isNaN(antennaHeight)) continue; let lat, lon; if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180) { lat = val1; lon = val2; } else { if (!coordSystemId) { throw new Error("XY座標が検出されましたが、有効な座標系が選択されていません。"); } const easting = val1; const northing = val2; const latLon = xyToLatLon(easting, northing, coordSystemId); lat = latLon.lat; lon = latLon.lon; } if (isNaN(lat) || isNaN(lon)) { console.warn(`行 ${i+1} のデータが無効か、座標系の設定が間違っている可能性があります: ${dataLines[i]}`); continue; } points.push({ id: `${fileName}-csv-${i}`, name: name, lat: lat, lon: lon, antennaHeight: antennaHeight, time: '', cmtText: `(CSV Import)`, pointGeoidHeight: 0, ellipsoidHeight: null, eleDiff: null, fileName: fileName, modifiedFields: {}, isHidden: false, originalCoordSystemType: '' }); } return points; }
         function showCoordSystemModal(csvContent, fileName) { tempCsvContent = csvContent; tempCsvFileName = fileName; const modal = document.getElementById('coord-modal'); const mainSelect = document.getElementById('coordSystem'); const modalSelect = document.getElementById('modal-coord-system'); modalSelect.innerHTML = mainSelect.innerHTML; modalSelect.value = mainSelect.value; modal.style.display = 'flex'; }
         function parseCSV(csvText, fileName) { const lines = csvText.trim().split(/\r?\n/); if (lines.length === 0 || (lines.length === 1 && lines[0].trim() === '')) throw new Error("データが空です。"); const headerLineTest = lines[0].toLowerCase(); const hasHeader = headerLineTest.includes('測点名') || headerLineTest.includes('name') || headerLineTest.includes('point'); const lineToCheck = hasHeader && lines.length > 1 ? lines[1] : lines[0]; if (!lineToCheck) { throw new Error("データ行が見つかりません。"); } const valuesToCheck = parseCSVLine(lineToCheck); if (valuesToCheck.length < 3) throw new Error("データは少なくとも3列（測点名, X/緯度, Y/経度）必要です。"); const val1 = parseFloat(valuesToCheck[1]); const val2 = parseFloat(valuesToCheck[2]); const isLatLon = !isNaN(val1) && !isNaN(val2) && Math.abs(val1) <= 90 && Math.abs(val2) <= 180; if (isLatLon) { const coordSystemId = document.getElementById('coordSystem').value; return processCsvPoints(csvText, fileName, coordSystemId); } else { showCoordSystemModal(csvText, fileName); return null; } }
-        
-        function processFiles(files) { 
-            let firstFileProcessed = false;
-            Array.from(files).forEach(file => { 
-                const reader = new FileReader(); 
-                const fileType = file.name.toLowerCase().endsWith('.gpx') ? 'gpx' : (file.name.toLowerCase().endsWith('.csv') || file.name.toLowerCase().endsWith('.txt') ? 'csv' : null); 
-                if (!fileType) return; 
-                reader.onload = (e) => { 
-                    try { 
-                        const content = e.target.result; 
-                        let points = []; 
-                        if (fileType === 'gpx') { 
-                            points = parseGPX(content, file.name); 
-                            if(points.length === 0) { alert(`ファイル「${file.name}」に測点(<wpt>)がありません。`); return; } 
-                        } else { 
-                            points = parseCSV(content, file.name); 
-                            if (points === null) return; 
-                            if(points.length === 0) { alert(`ファイル「${file.name}」から有効な測点を読み込めませんでした。`); return; } 
-                        } 
-                        
-                        if (!firstFileProcessed && points.length > 0) {
-                            const firstPoint = points[0];
-                            const pref = getPrefectureFromLatLng(firstPoint.lat, firstPoint.lon);
-                            if (pref) {
-                                document.getElementById('prefecture-select').value = pref;
-                                document.getElementById('prefecture-select').dispatchEvent(new Event('change'));
-                            }
-                            firstFileProcessed = true;
-                        }
-
-                        loadedFiles[file.name] = { points, visible: true, color: COLORS[Object.keys(loadedFiles).length % COLORS.length], gpxContent: fileType === 'gpx' ? content : null }; 
-                        updateFileListUI(); 
-                        updateUI(); 
-                    } catch (err) { 
-                        alert(`ファイル解析エラー (${file.name}): ${err.message}`); 
-                    } 
-                }; 
-                reader.readAsText(file); 
-            }); 
-        }
+        function processFiles(files) { Array.from(files).forEach(file => { const reader = new FileReader(); const fileType = file.name.toLowerCase().endsWith('.gpx') ? 'gpx' : (file.name.toLowerCase().endsWith('.csv') || file.name.toLowerCase().endsWith('.txt') ? 'csv' : null); if (!fileType) return; reader.onload = (e) => { try { const content = e.target.result; let points = []; if (fileType === 'gpx') { points = parseGPX(content, file.name); if(points.length === 0) { alert(`ファイル「${file.name}」に測点(<wpt>)がありません。`); return; } } else { points = parseCSV(content, file.name); if (points === null) return; if(points.length === 0) { alert(`ファイル「${file.name}」から有効な測点を読み込めませんでした。`); return; } } loadedFiles[file.name] = { points, visible: true, color: COLORS[Object.keys(loadedFiles).length % COLORS.length], gpxContent: fileType === 'gpx' ? content : null }; updateFileListUI(); updateUI(); } catch (err) { alert(`ファイル解析エラー (${file.name}): ${err.message}`); } }; reader.readAsText(file); }); }
         
         function togglePointVisibility(pointId, recordAction = true) {
             let targetPoint = null;
@@ -758,18 +767,46 @@
             document.getElementById('undoBtn').style.display = actionHistory.length > 0 ? 'inline-block' : 'none';
         }
         
-        function updateUI() {
-            allPoints = [];
-            const sortedFileNames = Object.keys(loadedFiles).sort();
-            for (const f of sortedFileNames) {
-                allPoints.push(...loadedFiles[f].points);
-            }
-            activePoints = allPoints.filter(p => {
-                const fileInfo = loadedFiles[p.fileName];
-                return fileInfo && fileInfo.visible && !p.isHidden;
-            });
-            rerenderUI();
+       
+// ▼ 追加: ポイントがフィルター条件を満たしているか判定する関数
+function checkPointFilter(p) {
+    // 時間フィルターの判定
+    if (timeFilter.active) {
+        if (!p.time) return false; // 時間情報がないデータは除外
+        const pointTime = new Date(p.time);
+        if ((timeFilter.start && pointTime < timeFilter.start) || (timeFilter.end && pointTime > timeFilter.end)) {
+            return false;
         }
+    }
+    // アンテナ高フィルターの判定
+    if (heightFilter.active) {
+        if ((heightFilter.min !== null && p.antennaHeight < heightFilter.min) || (heightFilter.max !== null && p.antennaHeight > heightFilter.max)) {
+            return false;
+        }
+    }
+    return true; // フィルターにかからなければ表示（true）
+}
+
+ // ▼修正: フィルタリングロジックをupdateUIに追加
+// ▼ 修正: updateUI関数
+function updateUI() {
+    allPoints = [];
+    const sortedFileNames = Object.keys(loadedFiles).sort();
+    for (const f of sortedFileNames) {
+        allPoints.push(...loadedFiles[f].points);
+    }
+
+    activePoints = allPoints.filter(p => {
+        const fileInfo = loadedFiles[p.fileName];
+        // ファイル自体が非表示、または個別に非表示にされている場合は除外
+        if (!fileInfo || !fileInfo.visible || p.isHidden) return false;
+
+        // フィルター条件（時間・高さ）を満たしているかチェック
+        return checkPointFilter(p);
+    });
+    
+    rerenderUI();
+}
 
         function rerenderUI(highlightPointId = null) {
             const sys = document.getElementById('coordSystem').value;
@@ -788,8 +825,90 @@
                 document.getElementById('tableContainer').innerHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">GPX/CSVファイルをインポート、またはプロジェクトファイルを読み込んでください</div>`;
             }
         }
+        
+        // ▼修正: displayTableでフィルター状態に応じてヘッダーのスタイルを変更
+        // ▼ 修正: displayTable関数
+function displayTable(points, highlightPointId) {
+    const datumSelect = document.getElementById('datum-select');
+    const selectedDatumOffset = parseFloat(datumSelect.value);
+    const selectedDatumLabel = datumSelect.options[datumSelect.selectedIndex].text.match(/\((.*?)\)/)?.[1] || '換算';
+    
+    // ヘッダー定義: アイコン(🔍)を追加
+    let tableHTML = `<table><thead><tr>
+        <th><span id="toggle-all-visibility" title="全測点の表示/非表示を切り替え" style="cursor: pointer;">👁️</span></th>
+        <th class="mobile-hidden-col">ファイル名</th>
+        <th title="ダブルクリックで編集">測点名</th>
+        <th id="time-header" class="mobile-hidden-col filterable-header ${timeFilter.active ? 'filtered-header' : ''}" title="クリックして時間で絞り込み">
+            測定日時<span class="filter-icon">🔍</span>
+        </th>
+        <th>緯度</th><th>経度</th><th>X (m)</th><th>Y (m)</th>
+        <th id="height-header" class="filterable-header ${heightFilter.active ? 'filtered-header' : ''}" title="クリックしてアンテナ高で絞り込み">
+            アンテナ高<span class="filter-icon">🔍</span>
+        </th>
+        <th>補正後標高 (T.P.)</th>
+        <th>換算標高 (${selectedDatumLabel})</th>
+    </tr></thead><tbody>`;
 
-        function displayTable(points, highlightPointId) { const datumSelect = document.getElementById('datum-select'); const selectedDatumOffset = parseFloat(datumSelect.value); const selectedDatumLabel = datumSelect.options[datumSelect.selectedIndex].text.match(/\((.*?)\)/)?.[1] || '換算'; let tableHTML = `<table><thead><tr><th><span id="toggle-all-visibility" title="全測点の表示/非表示を切り替え" style="cursor: pointer;">👁️</span></th><th class="mobile-hidden-col">ファイル名</th><th title="ダブルクリックで編集">測点名</th><th class="mobile-hidden-col">測定日時</th><th>緯度</th><th>経度</th><th>X (m)</th><th>Y (m)</th><th title="ダブルクリックで編集">アンテナ高</th><th>補正後標高 (T.P.)</th><th>換算標高 (${selectedDatumLabel})</th></tr></thead><tbody>`; if (points.length === 0) { tableHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">表示する測点がありません</div>`; } else { const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); points.forEach(p => { const highlightClass = p.id === highlightPointId ? 'highlighted' : ''; const hiddenClass = p.isHidden || !loadedFiles[p.fileName] || !loadedFiles[p.fileName].visible ? 'hidden-row' : ''; const nameModifiedClass = p.modifiedFields?.name ? 'modified-cell' : ''; const antennaHeightModifiedClass = p.modifiedFields?.antennaHeight ? 'modified-cell' : ''; const inSectionClass = pointsInLastSectionIds.includes(p.id) ? 'in-section' : ''; const coords = latLonToXY(p.lat, p.lon, sys); const correctedEle = p.antennaHeight - pole; const convertedDatumElevation = correctedEle - selectedDatumOffset; tableHTML += `<tr data-id="${p.id}" class="${highlightClass} ${inSectionClass} ${hiddenClass}"><td><span class="visibility-toggle" title="表示/非表示" onclick="togglePointVisibility('${p.id}')">${p.isHidden ? '🙈' : '👁️'}</span></td><td class="mobile-hidden-col">${p.fileName}</td> <td class="editable-cell ${nameModifiedClass}" data-field="name"><strong>${p.name}</strong></td> <td class="mobile-hidden-col">${p.time ? new Date(p.time).toLocaleString('ja-JP', { hour12: false }).replace(/\//g, '-') : 'N/A'}</td> <td>${p.lat.toFixed(9)}</td><td>${p.lon.toFixed(9)}</td><td>${coords.x.toFixed(3)}</td><td>${coords.y.toFixed(3)}</td> <td class="editable-cell ${antennaHeightModifiedClass}" data-field="antennaHeight"><strong>${p.antennaHeight.toFixed(3)}</strong></td> <td>${correctedEle.toFixed(3)}</td><td>${convertedDatumElevation.toFixed(3)}</td></tr>`; }); tableHTML += `</tbody></table>`; } document.getElementById('tableContainer').innerHTML = tableHTML; const toggleAllBtn = document.getElementById('toggle-all-visibility'); if (toggleAllBtn) { toggleAllBtn.addEventListener('click', () => { const shouldHideAll = activePoints.length > 0; allPoints.forEach(p => { if (loadedFiles[p.fileName] && loadedFiles[p.fileName].visible) p.isHidden = shouldHideAll; }); updateUI(); }); } }
+    if (points.length === 0) {
+        tableHTML = `<div class="loading" style="text-align:center; padding-top: 50px;">表示する測点がありません</div>`;
+    } else {
+        const sys = document.getElementById('coordSystem').value;
+        const pole = parseFloat(document.getElementById('poleHeight').value);
+
+        points.forEach(p => {
+            const highlightClass = p.id === highlightPointId ? 'highlighted' : '';
+            const hiddenClass = p.isHidden || !loadedFiles[p.fileName] || !loadedFiles[p.fileName].visible ? 'hidden-row' : '';
+            
+            // ▼ 追加: フィルター条件による除外判定
+            const isFilteredOut = !checkPointFilter(p);
+            const filteredClass = isFilteredOut ? 'filtered-out-row' : '';
+
+            const nameModifiedClass = p.modifiedFields?.name ? 'modified-cell' : '';
+            const antennaHeightModifiedClass = p.modifiedFields?.antennaHeight ? 'modified-cell' : '';
+            const inSectionClass = pointsInLastSectionIds.includes(p.id) ? 'in-section' : '';
+            
+            const coords = latLonToXY(p.lat, p.lon, sys);
+            const correctedEle = p.antennaHeight - pole;
+            const convertedDatumElevation = correctedEle - selectedDatumOffset;
+            
+            // 行クラスに filteredClass を追加
+            tableHTML += `<tr data-id="${p.id}" class="${highlightClass} ${inSectionClass} ${hiddenClass} ${filteredClass}">
+                <td><span class="visibility-toggle" title="表示/非表示" onclick="${isFilteredOut ? '' : `togglePointVisibility('${p.id}')`}">${p.isHidden ? '🙈' : '👁️'}</span></td>
+                <td class="mobile-hidden-col">${p.fileName}</td>
+                <td class="editable-cell ${nameModifiedClass}" data-field="name"><strong>${p.name}</strong></td>
+                <td class="mobile-hidden-col">${p.time ? new Date(p.time).toLocaleString('ja-JP', { hour12: false }).replace(/\//g, '-') : 'N/A'}</td>
+                <td>${p.lat.toFixed(9)}</td><td>${p.lon.toFixed(9)}</td>
+                <td>${coords.x.toFixed(3)}</td><td>${coords.y.toFixed(3)}</td>
+                <td class="editable-cell ${antennaHeightModifiedClass}" data-field="antennaHeight"><strong>${p.antennaHeight.toFixed(3)}</strong></td>
+                <td>${correctedEle.toFixed(3)}</td>
+                <td>${convertedDatumElevation.toFixed(3)}</td>
+            </tr>`;
+        });
+        tableHTML += `</tbody></table>`;
+    }
+    
+    document.getElementById('tableContainer').innerHTML = tableHTML;
+    
+    // イベントリスナーの再設定
+    const toggleAllBtn = document.getElementById('toggle-all-visibility');
+    if (toggleAllBtn) {
+        toggleAllBtn.addEventListener('click', () => {
+            const shouldHideAll = activePoints.length > 0;
+            allPoints.forEach(p => {
+                if (loadedFiles[p.fileName] && loadedFiles[p.fileName].visible && checkPointFilter(p)) {
+                    p.isHidden = shouldHideAll;
+                }
+            });
+            updateUI();
+        });
+    }
+    
+    const timeHeader = document.getElementById('time-header');
+    if(timeHeader) timeHeader.addEventListener('click', () => openFilterModal('time'));
+    
+    const heightHeader = document.getElementById('height-header');
+    if(heightHeader) heightHeader.addEventListener('click', () => openFilterModal('height'));
+}
         Chart.register(window.ChartZoom);
         const xyPlotAspectRatioPlugin = { id: 'xyPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('aspectRatioToggle').checked) return; const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
         const xzPlotAspectRatioPlugin = { id: 'xzPlotAspectRatio', afterDataLimits: (chart) => { if (!document.getElementById('xzAspectRatioToggle').checked) return; const { x, y } = chart.scales; if (!x.width || !y.height) return; const xRange = x.max - x.min; const yRange = y.max - y.min; if (xRange <= 0 || yRange <= 0) return; const xPixelPerUnit = x.width / xRange; const yPixelPerUnit = y.height / yRange; if (xPixelPerUnit > yPixelPerUnit) { const newRange = x.width / yPixelPerUnit; const diff = newRange - xRange; x.min -= diff / 2; x.max += diff / 2; } else { const newRange = y.height / xPixelPerUnit; const diff = newRange - yRange; y.min -= diff / 2; y.max += diff / 2; } } };
@@ -869,6 +988,105 @@
         window.focusOnPoint = (event, pointId) => { if (!pointId || (event && event.target.tagName.toLowerCase() === 'input')) return; if (window.getSelection().toString()) return; let masterPoint = null; allPoints.forEach(p => { if (p.id === pointId) masterPoint = p; }); if (!masterPoint) return; rerenderUI(pointId); if (!masterPoint.isHidden) { const point = activePoints.find(p => p.id === pointId); if (point?.marker) { point.marker.openPopup(); map.setView(point.marker.getLatLng(), 18); } } const row = document.querySelector(`tr[data-id="${pointId}"]`); if (row) { const tableContainer = document.getElementById('tableContainer'); const containerRect = tableContainer.getBoundingClientRect(); const rowRect = row.getBoundingClientRect(); if (rowRect.top < containerRect.top || rowRect.bottom > containerRect.bottom) { const desiredScrollTop = tableContainer.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2); tableContainer.scrollTo({ top: desiredScrollTop, behavior: 'auto' }); } } };
         function handleTableCellEdit(e) { const cell = e.target.closest('.editable-cell'); if (!cell || cell.querySelector('input')) return; const originalText = cell.querySelector('strong')?.textContent || cell.textContent; const field = cell.dataset.field; const pointId = cell.parentElement.dataset.id; cell.innerHTML = `<input type="text" value="${originalText.trim()}" />`; const input = cell.querySelector('input'); input.focus(); input.select(); const save = () => { let masterPoint = null; allPoints.forEach(p => { if (p.id === pointId) masterPoint = p; }); if (!masterPoint) return; const newValue = input.value; let changed = false; if (field === 'antennaHeight') { const num = parseFloat(newValue); if (!isNaN(num) && masterPoint.antennaHeight.toFixed(3) !== num.toFixed(3)) { masterPoint.antennaHeight = num; changed = true; } } else { if (masterPoint.name !== newValue) { masterPoint.name = newValue; changed = true; } } if (changed) { masterPoint.modifiedFields[field] = true; } updateUI(); rerenderUI(pointId); }; input.addEventListener('blur', save); input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { input.removeEventListener('blur', save); rerenderUI(pointId); } }); }
         function updateFileListUI() { const panel = document.getElementById('file-list-panel'); document.getElementById('file-list-panel-container').style.display = Object.keys(loadedFiles).length > 0 ? 'block' : 'none'; panel.innerHTML = ''; for (const f in loadedFiles) { const item = document.createElement('div'); item.className = 'file-item'; item.innerHTML = `<input type="checkbox" id="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" ${loadedFiles[f].visible?'checked':''}> <label for="check-${f.replace(/[^a-zA-Z0-9]/g, '-')}" title="${f}">${f}</label> <button class="delete-btn" title="削除">&times;</button>`; panel.appendChild(item); item.querySelector('input').addEventListener('change', (e) => { loadedFiles[f].visible = e.target.checked; updateUI(); }); item.querySelector('button').addEventListener('click', () => { delete loadedFiles[f]; updateFileListUI(); updateUI(); }); } }
+        
+        // ▼追加: フィルター関連の関数群
+        function openFilterModal(type) {
+            if (allPoints.length === 0) {
+                alert("絞り込み対象のデータがありません。");
+                return;
+            }
+            currentFilterType = type;
+            const modal = document.getElementById('filter-modal');
+            const title = document.getElementById('filter-modal-title');
+            const timeSection = document.getElementById('time-filter-section');
+            const heightSection = document.getElementById('height-filter-section');
+            const startTimeInput = document.getElementById('filter-start-time');
+            const endTimeInput = document.getElementById('filter-end-time');
+            const minHeightInput = document.getElementById('filter-min-height');
+            const maxHeightInput = document.getElementById('filter-max-height');
+
+            const toLocalISOString = (date) => {
+                const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(date - tzoffset)).toISOString().slice(0, 16);
+                return localISOTime;
+            };
+
+            if (type === 'time') {
+                title.textContent = '測定日時で絞り込み';
+                timeSection.style.display = 'block';
+                heightSection.style.display = 'none';
+
+                let minDate = new Date(), maxDate = new Date(1970, 0, 1);
+                let hasTimeData = false;
+                allPoints.forEach(p => {
+                    if (p.time) {
+                        hasTimeData = true;
+                        const d = new Date(p.time);
+                        if (d < minDate) minDate = d;
+                        if (d > maxDate) maxDate = d;
+                    }
+                });
+
+                if (!hasTimeData) {
+                    alert("データに有効な時間情報が含まれていません。");
+                    return;
+                }
+                
+                startTimeInput.value = timeFilter.active && timeFilter.start ? toLocalISOString(timeFilter.start) : toLocalISOString(minDate);
+                endTimeInput.value = timeFilter.active && timeFilter.end ? toLocalISOString(timeFilter.end) : toLocalISOString(maxDate);
+
+            } else if (type === 'height') {
+                title.textContent = 'アンテナ高で絞り込み';
+                timeSection.style.display = 'none';
+                heightSection.style.display = 'block';
+
+                const heights = allPoints.map(p => p.antennaHeight);
+                const minHeight = Math.min(...heights);
+                const maxHeight = Math.max(...heights);
+                
+                minHeightInput.value = heightFilter.active && heightFilter.min !== null ? heightFilter.min : minHeight.toFixed(3);
+                maxHeightInput.value = heightFilter.active && heightFilter.max !== null ? heightFilter.max : maxHeight.toFixed(3);
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function applyFilters() {
+            if (currentFilterType === 'time') {
+                const start = document.getElementById('filter-start-time').value;
+                const end = document.getElementById('filter-end-time').value;
+                if (start && end) {
+                    timeFilter.start = new Date(start);
+                    timeFilter.end = new Date(end);
+                    timeFilter.active = true;
+                } else {
+                    timeFilter.active = false;
+                }
+            } else if (currentFilterType === 'height') {
+                const min = parseFloat(document.getElementById('filter-min-height').value);
+                const max = parseFloat(document.getElementById('filter-max-height').value);
+                if (!isNaN(min) && !isNaN(max)) {
+                    heightFilter.min = min;
+                    heightFilter.max = max;
+                    heightFilter.active = true;
+                } else {
+                    heightFilter.active = false;
+                }
+            }
+            document.getElementById('filter-modal').style.display = 'none';
+            updateUI();
+        }
+
+        function resetFilters() {
+            if (currentFilterType === 'time') {
+                timeFilter = { start: null, end: null, active: false };
+            } else if (currentFilterType === 'height') {
+                heightFilter = { min: null, max: null, active: false };
+            }
+            document.getElementById('filter-modal').style.display = 'none';
+            updateUI();
+        }
+        
         function toggleSectionLineMode() { 
             isSectionMode = !isSectionMode; 
             const btn = document.getElementById('section-line-btn');
@@ -1038,36 +1256,7 @@
         function performClusteringAndStatistics(xyToleranceCm, zToleranceCm) { if (activePoints.length === 0) { alert("処理対象のデータがありません。"); return; } const xyTolerance = xyToleranceCm / 100.0; const zTolerance = zToleranceCm / 100.0; const sys = document.getElementById('coordSystem').value; const pole = parseFloat(document.getElementById('poleHeight').value); const allCurrentPoints = []; for(const f in loadedFiles) { allCurrentPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden)); } const processedPoints = allCurrentPoints.map(p => ({ ...p, ...latLonToXY(p.lat, p.lon, sys), correctedEle: p.antennaHeight - pole, processed: false })); const groups = []; lastClusteredPointIds.clear(); for (let i = 0; i < processedPoints.length; i++) { const point = processedPoints[i]; if (point.processed) continue; const newGroup = []; const queue = [point]; point.processed = true; while (queue.length > 0) { const current = queue.shift(); newGroup.push(current); for (let j = 0; j < processedPoints.length; j++) { const other = processedPoints[j]; if (other.processed) continue; const dx = current.x - other.x; const dy = current.y - other.y; const dz = current.correctedEle - other.correctedEle; const distXY = Math.sqrt(dx * dx + dy * dy); const distZ = Math.abs(dz); if (distXY <= xyTolerance && distZ <= zTolerance) { other.processed = true; queue.push(other); } } } if (newGroup.length > 1) { groups.push(newGroup); newGroup.forEach(p => lastClusteredPointIds.add(p.id)); } } if (groups.length === 0) { alert("設定された閾値内で、複数の測定記録がある地点が見つかりませんでした。閾値を広げて試してください。"); return; } lastClusterResults = groups.map((group, index) => { const xCoords = group.map(p => p.x); const yCoords = group.map(p => p.y); const eleCoords = group.map(p => p.correctedEle); const meanX = getMean(xCoords); const meanY = getMean(yCoords); const meanEle = getMean(eleCoords); const commonName = findLongestCommonPrefix(group.map(p => p.name)); return { groupId: commonName || `グループ ${index + 1}`, originalPointIds: group.map(p => p.id), points: group.map(p => p.name), count: group.length, meanX: meanX, meanY: meanY, meanEle: meanEle, stdDevX: getStdDev(xCoords, meanX), stdDevY: getStdDev(yCoords, meanY), stdDevEle: getStdDev(eleCoords, meanEle), rangeX: Math.max(...xCoords) - Math.min(...xCoords), rangeY: Math.max(...yCoords) - Math.min(...yCoords), color: COLORS[index % COLORS.length] }; }); displayGroupStatisticsModal(lastClusterResults); displayGroupStatsOnMap(lastClusterResults, sys); rerenderUI(); }
         function displayGroupStatisticsModal(results) { const modal = document.getElementById('stats-modal'); const body = document.getElementById('stats-modal-body'); let tableHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;"><thead><tr style="background-color: #2c3e50; color: white;"><th style="padding: 8px; border: 1px solid #ddd;">グループID</th><th style="padding: 8px; border: 1px solid #ddd;">回数</th><th style="padding: 8px; border: 1px solid #ddd;">平均X (m)</th><th style="padding: 8px; border: 1px solid #ddd;">平均Y (m)</th><th style="padding: 8px; border: 1px solid #ddd;">平均標高 (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="X座標の標準偏差">σX (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="Y座標の標準偏差">σY (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="標高の標準偏差">σ標高 (m)</th><th style="padding: 8px; border: 1px solid #ddd;" title="水平方向の最大最小の差">範囲XY (m)</th></tr></thead><tbody>`; results.forEach((r, index) => { const horizontalRange = Math.sqrt(r.rangeX**2 + r.rangeY**2); const originalNames = r.points.join(', '); tableHTML += `<tr data-group-index="${index}"><td style="padding: 8px; border: 1px solid #ddd; cursor: help;" title="含まれる測点: ${originalNames}"><span class="color-indicator" style="background-color:${r.color};"></span>${r.groupId}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.count}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanX.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanY.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.meanEle.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevX.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevY.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.stdDevEle.toFixed(4)}</td><td style="padding: 8px; border: 1px solid #ddd;">${horizontalRange.toFixed(4)}</td></tr>`; }); tableHTML += `</tbody></table>`; body.innerHTML = tableHTML; modal.style.display = 'flex'; }
         function displayGroupStatsOnMap(results, systemId) { if (statsLayerGroup) { statsLayerGroup.clearLayers(); } else { statsLayerGroup = L.layerGroup().addTo(map); } results.forEach(r => { const { lat, lon } = xyToLatLon(r.meanX, r.meanY, systemId); const horizontalStdDev = Math.sqrt(r.stdDevX**2 + r.stdDevY**2); const iconHtml = `<span style="font-size: 24px; color: ${r.color}; text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;">★</span>`; const avgMarker = L.marker([lat, lon], { icon: L.divIcon({ html: iconHtml, className: 'text-marker', iconSize: [24, 24], iconAnchor: [12, 12] }) }).bindPopup(`<b>${r.groupId} (平均値)</b><br>測定回数: ${r.count}<br>水平標準偏差 (σXY): ${horizontalStdDev.toFixed(4)}m`); statsLayerGroup.addLayer(avgMarker); if (horizontalStdDev > 0) { const circle = L.circle([lat, lon], { radius: horizontalStdDev, color: r.color, fillColor: r.color, fillOpacity: 0.3 }); statsLayerGroup.addLayer(circle); } }); }
-        function addAveragesToData() {
-            if (!lastClusterResults) {
-                alert("統計処理が実行されていません。");
-                return;
-            }
-            const sys = document.getElementById('coordSystem').value;
-            const pole = parseFloat(document.getElementById('poleHeight').value) || 0; // 現在のポール高を取得
-            const avgFileName = "統計処理_平均値";
-            const ungroupedFileName = "統計処理_対象外データ";
-            const newAvgPoints = lastClusterResults.map((r, index) => {
-                const { lat, lon } = xyToLatLon(r.meanX, r.meanY, sys);
-                return {
-                    id: `${avgFileName}-${index}`,
-                    name: `${r.groupId} (平均)`,
-                    lat: lat,
-                    lon: lon,
-                    antennaHeight: r.meanEle + pole, // <--- 修正部分：平均標高にポール高を足し戻す
-                    time: new Date().toISOString(),
-                    cmtText: `(${r.count}点の平均値)`,
-                    fileName: avgFileName,
-                    modifiedFields: {},
-                    isHidden: false,
-                    originalCoordSystemType: ''
-                };
-            });
-            let allOriginalPoints = [];
-            for(const f in loadedFiles) {
-                allOriginalPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden));
-            }
- const newUngroupedPoints = allOriginalPoints.filter(p => !lastClusteredPointIds.has(p.id)).map(p => ({ ...p, fileName: ungroupedFileName, id: `${ungroupedFileName}-${p.id}` })); if (loadedFiles[avgFileName] || loadedFiles[ungroupedFileName]) { if(!confirm(`統計処理データは既に存在します。上書きしますか？`)) return; } loadedFiles[avgFileName] = { points: newAvgPoints, visible: true, color: '#ff00ff', gpxContent: null }; if(newUngroupedPoints.length > 0) { loadedFiles[ungroupedFileName] = { points: newUngroupedPoints, visible: true, color: '#888888', gpxContent: null }; } Object.keys(loadedFiles).forEach(fileName => { if (fileName !== avgFileName && fileName !== ungroupedFileName) { loadedFiles[fileName].visible = false; } }); alert(`「${avgFileName}」と「${ungroupedFileName}」が追加されました。\n元のデータは非表示になっています。`); updateFileListUI(); updateUI(); document.getElementById('stats-modal').style.display = 'none'; if (statsLayerGroup) statsLayerGroup.clearLayers(); lastClusterResults = null; rerenderUI(); }
+        function addAveragesToData() { if (!lastClusterResults) { alert("統計処理が実行されていません。"); return; } const sys = document.getElementById('coordSystem').value; const avgFileName = "統計処理_平均値"; const ungroupedFileName = "統計処理_対象外データ"; const newAvgPoints = lastClusterResults.map((r, index) => { const { lat, lon } = xyToLatLon(r.meanX, r.meanY, sys); return { id: `${avgFileName}-${index}`, name: `${r.groupId} (平均)`, lat: lat, lon: lon, antennaHeight: r.meanEle, time: new Date().toISOString(), cmtText: `(${r.count}点の平均値)`, fileName: avgFileName, modifiedFields: {}, isHidden: false, originalCoordSystemType: '' }; }); let allOriginalPoints = []; for(const f in loadedFiles) { allOriginalPoints.push(...loadedFiles[f].points.filter(p => !p.isHidden)); } const newUngroupedPoints = allOriginalPoints.filter(p => !lastClusteredPointIds.has(p.id)).map(p => ({ ...p, fileName: ungroupedFileName, id: `${ungroupedFileName}-${p.id}` })); if (loadedFiles[avgFileName] || loadedFiles[ungroupedFileName]) { if(!confirm(`統計処理データは既に存在します。上書きしますか？`)) return; } loadedFiles[avgFileName] = { points: newAvgPoints, visible: true, color: '#ff00ff', gpxContent: null }; if(newUngroupedPoints.length > 0) { loadedFiles[ungroupedFileName] = { points: newUngroupedPoints, visible: true, color: '#888888', gpxContent: null }; } Object.keys(loadedFiles).forEach(fileName => { if (fileName !== avgFileName && fileName !== ungroupedFileName) { loadedFiles[fileName].visible = false; } }); alert(`「${avgFileName}」と「${ungroupedFileName}」が追加されました。\n元のデータは非表示になっています。`); updateFileListUI(); updateUI(); document.getElementById('stats-modal').style.display = 'none'; if (statsLayerGroup) statsLayerGroup.clearLayers(); lastClusterResults = null; rerenderUI(); }
         
         function initialize() {
             coordinateSystems.forEach(sys => { const projDef = `+proj=tmerc +lat_0=${sys.lat0} +lon_0=${sys.lon0} +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs`; proj4.defs(`EPSG:${sys.epsg}`, projDef); });
@@ -1109,6 +1298,7 @@
             };
             
             prefSelect.addEventListener('change', updateCoordSystemOptions);
+            updateCoordSystemOptions();
             prefSelect.value = "東京都";
             updateCoordSystemOptions();
             coordSystemSelect.value = "9";
@@ -1177,7 +1367,7 @@
             document.getElementById('text-import-ok').addEventListener('click', () => { const textContent = document.getElementById('text-import-textarea').value; if (textContent.trim() === '') { alert('テキストが入力されていません。'); return; } const fileName = `Pasted_Data_${textImportCounter++}`; try { const points = parseCSV(textContent, fileName); if (points === null) {} else if(points.length === 0) { alert(`貼り付けられたテキストから有効な測点を読み込めませんでした。`); } else { loadedFiles[fileName] = { points, visible: true, color: COLORS[Object.keys(loadedFiles).length % COLORS.length], gpxContent: null }; updateFileListUI(); updateUI(); } } catch (err) { alert(`テキスト解析エラー: ${err.message}`); } textImportModal.style.display = 'none'; });
             document.querySelectorAll('#section-type-switch-container input[name="sectionType"]').forEach(radio => { radio.addEventListener('change', (e) => updateSectionPlot(e.target.value)); });
             const today = new Date();
-            document.getElementById('lastUpdated').textContent = `最終更新日: 2025年11月13日`;
+            document.getElementById('lastUpdated').textContent = `最終更新日:2025年11月14日`;
             const helpBtn = document.getElementById('helpBtn');
             const helpModal = document.getElementById('help-modal');
             helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
@@ -1198,6 +1388,13 @@
             statsHeader.addEventListener('mousedown', (e) => { if(e.target.tagName === 'BUTTON') return; isDragging = true; offsetX = e.clientX - statsModal.offsetLeft; offsetY = e.clientY - statsModal.offsetTop; statsModal.style.userSelect = 'none'; });
             document.addEventListener('mousemove', (e) => { if (isDragging) { statsModal.style.left = `${e.clientX - offsetX}px`; statsModal.style.top = `${e.clientY - offsetY}px`; } });
             document.addEventListener('mouseup', () => { isDragging = false; statsModal.style.userSelect = ''; });
+
+            // ▼追加: フィルターモーダルのイベントリスナー
+            const filterModal = document.getElementById('filter-modal');
+            filterModal.querySelector('.modal-close').addEventListener('click', () => filterModal.style.display = 'none');
+            document.getElementById('filter-cancel-btn').addEventListener('click', () => filterModal.style.display = 'none');
+            document.getElementById('filter-ok-btn').addEventListener('click', applyFilters);
+            document.getElementById('filter-reset-btn').addEventListener('click', resetFilters);
 
             const sectionCoordsModal = document.getElementById('section-by-coords-modal');
             sectionCoordsModal.querySelector('.modal-close').addEventListener('click', () => sectionCoordsModal.style.display = 'none');
